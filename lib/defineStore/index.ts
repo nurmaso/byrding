@@ -2,6 +2,7 @@ import { useEffect, useReducer, useState } from 'react';
 import rootStore from '../rootStore';
 import { StoreDefinition } from '../types/StoreDefiniton';
 import { StoreActions } from '../types/StoreActions';
+import { StoreGetters } from '../types/StoreGetters';
 
 function* componentIdGen() {
   let index = 1;
@@ -16,8 +17,8 @@ const stateReducer = <S, G, A>(
 ) => ({ ...state, ...context });
 
 const initGetters = <S, G extends object>(storeGetters: G, state: S) => {
-  if (!storeGetters) return undefined;
-  const result = {};
+  // if (!storeGetters) return undefined;
+  const result = {} as StoreGetters<G, S>;
   for (const [key, getter] of Object.entries(storeGetters)) {
     Object.assign(result, {
       [key]: (context: unknown) => getter({ state, getters: result }, context),
@@ -34,9 +35,9 @@ const initGetters = <S, G extends object>(storeGetters: G, state: S) => {
 const useActions = <A, S, G>(
   name: string,
   actions: StoreActions<S, G, A>,
-  context: StoreDefinition<S, G, A>
-) => {
-  if (!actions) return undefined;
+  context: Partial<StoreDefinition<S, G, A>> = {}
+): StoreActions<S, G, A> => {
+  // if (!actions) return undefined;
   const result = {} as StoreActions<S, G, A>;
   for (const action in actions) {
     Object.assign(result, {
@@ -44,6 +45,7 @@ const useActions = <A, S, G>(
         console.log('CONTEXT', context.state);
         actions[action].bind(context)(...args);
         if (
+          context.state &&
           JSON.stringify(context.state) !== JSON.stringify(rootStore.get(name))
         ) {
           rootStore.handleUpdate<S>(name, context.state);
@@ -56,8 +58,9 @@ const useActions = <A, S, G>(
 
 export const defineStore = <N, S, G, A>(
   name: N | string | symbol,
-  context: StoreDefinition<S, G, A>
-): (() => StoreDefinition<S, G, A> & { setValue: () => void }) => {
+  context: Partial<StoreDefinition<S, G, A>>
+) => {
+  // ): (() => StoreDefinition<S, G, A> & { setValue: () => void }) => {
   console.log('Name', name);
   context.init?.bind(context)();
   const useStore = (): StoreDefinition<S, G, A> & { setValue: () => void } => {
@@ -86,11 +89,7 @@ export const defineStore = <N, S, G, A>(
         delete rootStore.hooks[String(name)][id];
       };
     }, []);
-    const actions = useActions(String(name), store.actions, {
-      state: context.state,
-      getters,
-      actions: context.actions,
-    });
+    const actions = useActions(String(name), store.actions, context);
 
     return { state, getters, actions, setValue: updateValues };
   };
