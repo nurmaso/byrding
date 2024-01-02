@@ -17,7 +17,7 @@ const stateReducer = <S, G, A>(
 ) => ({ ...state, ...context });
 
 const initGetters = <S, G extends object>(storeGetters: G, state: S) => {
-  // if (!storeGetters) return undefined;
+  if (!storeGetters) return {} as StoreGetters<G, S>;
   const result = {} as StoreGetters<G, S>;
   for (const [key, getter] of Object.entries(storeGetters)) {
     Object.assign(result, {
@@ -35,15 +35,15 @@ const initGetters = <S, G extends object>(storeGetters: G, state: S) => {
 const useActions = <A, S, G>(
   name: string,
   actions: StoreActions<S, G, A>,
-  context: Partial<StoreDefinition<S, G, A>> = {}
+  context: StoreDefinition<S, G, A>
 ): StoreActions<S, G, A> => {
-  // if (!actions) return undefined;
   const result = {} as StoreActions<S, G, A>;
   for (const action in actions) {
     Object.assign(result, {
-      [action]: (...args: unknown[]) => {
+      [action]: (...args: any[]) => {
         console.log('CONTEXT', context.state);
         actions[action].bind(context)(...args);
+        // actions[action](...args);
         if (
           context.state &&
           JSON.stringify(context.state) !== JSON.stringify(rootStore.get(name))
@@ -58,9 +58,9 @@ const useActions = <A, S, G>(
 
 export const defineStore = <N, S, G, A>(
   name: N | string | symbol,
-  context: Partial<StoreDefinition<S, G, A>>
-) => {
-  // ): (() => StoreDefinition<S, G, A> & { setValue: () => void }) => {
+  context: StoreDefinition<S, G, A>
+  // ) => {
+): (() => StoreDefinition<S, G, A> & { setValue: () => void }) => {
   console.log('Name', name);
   context.init?.bind(context)();
   const useStore = (): StoreDefinition<S, G, A> & { setValue: () => void } => {
@@ -75,7 +75,7 @@ export const defineStore = <N, S, G, A>(
     >(stateReducer, store.state);
     const [getters, setGetters] = useState(initGetters(store.getters, state));
     const updateValues = () => {
-      console.log('CALLEd', rootStore.get(name));
+      console.log('CALLEd', rootStore.get(name), state);
       // setState(context);
       setState(rootStore.get(name).state);
       setGetters(initGetters(store.getters, rootStore.get(name).state));

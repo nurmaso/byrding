@@ -2,15 +2,21 @@ import { StoreDefinition } from '../types/StoreDefiniton';
 
 type Hooks<S> = {
   [key: string]: {
-    [key: number | string]: (context?: Partial<S>) => void;
+    [key: number | string]: (context?: S) => void;
   };
 };
+
+// type StoreStateMap<N, S> = {
+//   [key of N]: {}
+// }
 
 class RootStore<N, S, G, A> {
   #stores = new Map();
   hooks: Hooks<S> = {};
 
-  handleUpdate<T extends S>(name: string, context: Partial<T>) {
+  // #storeState = {};
+
+  handleUpdate<T extends S>(name: string, context: T) {
     console.log(this.hooks, name);
     for (const [, value] of Object.entries(this.hooks[name])) {
       value?.(context);

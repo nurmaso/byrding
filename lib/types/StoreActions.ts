@@ -1,7 +1,7 @@
 import { StoreDefinition } from './StoreDefiniton';
 
 export type StoreMethod<S, G, A> = (
-  this: Partial<StoreDefinition<S, G, A>>,
+  this: StoreDefinition<S, G, A>,
   ...args: any[]
 ) => any;
 
