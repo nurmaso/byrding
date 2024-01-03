@@ -3,9 +3,7 @@ import { StoreGetters } from './StoreGetters';
 
 export type StoreDefinition<S, G, A> = {
   state: S;
-  getters: StoreGetters<G, S>;
-  actions: {
-    [key in keyof A]: A[key] & ThisType<{ state: S } & A>;
-  };
+  getters?: StoreGetters<G, S>;
+  actions: A & ThisType<StoreDefinition<S, G, A>>;
   init?: () => void;
 };

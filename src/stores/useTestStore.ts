@@ -7,6 +7,7 @@ export const useTestStore = defineStore('TestStore', {
   },
   actions: {
     incCounter() {
+      console.log('THIS', this);
       this.state.counter++;
     },
     test(a: string): string {
