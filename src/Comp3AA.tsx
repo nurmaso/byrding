@@ -14,7 +14,7 @@ export const Comp3AA: React.FC = () => {
   const { state, getters, actions } = useTestStore();
   console.log('here 3aa', state, getters);
   useEffect(() => {
-    console.log('ACTIONS', actions.test('a'));
+    console.log('ACTIONS', actions.test(''));
     // actions.test();
   }, []);
 
