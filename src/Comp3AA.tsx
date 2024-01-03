@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTestStore } from './stores/useTestStore';
 
 function* calls() {
@@ -11,8 +11,12 @@ const calledTimes = calls();
 export const Comp3AA: React.FC = () => {
   const counter = calledTimes.next().value;
 
-  const { state, actions } = useTestStore();
-  console.log('here 3aa', state, actions);
+  const { state, getters, actions } = useTestStore();
+  console.log('here 3aa', state, getters);
+  useEffect(() => {
+    console.log('ACTIONS', actions.test(''));
+    // actions.test();
+  }, []);
 
   return (
     <div>

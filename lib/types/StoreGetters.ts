@@ -1,8 +1,6 @@
-export type StoreGetters<G, S> = Partial<
-  Record<
-    keyof G,
-    | (({ state }: { state: S }) => string | number)
-    | (() => string | number)
-    | null
-  >
+export type StoreGetters<G, S> = Record<
+  keyof G,
+  | (({ state }: { state: S }) => string | number)
+  | (() => string | number)
+  | null
 >;
