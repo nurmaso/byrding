@@ -17,7 +17,8 @@ class RootStore<N, S, G, A> {
   // #storeState = {};
 
   handleUpdate<T extends S>(name: string, context: T) {
-    console.log(this.hooks, name);
+    console.log('handleUpdate', this.hooks, name);
+    if (!this.hooks[name]) return;
     for (const [, value] of Object.entries(this.hooks[name])) {
       value?.(context);
     }
