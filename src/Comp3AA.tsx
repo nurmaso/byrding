@@ -11,21 +11,15 @@ const calledTimes = calls();
 export const Comp3AA: React.FC = () => {
   const counter = calledTimes.next().value;
 
-  const { state, getters, actions, testStore } = useTestStore();
-  console.log('TEST_STORE', testStore.getTestCounter, testStore);
+  const { state, getters, actions, store } = useTestStore();
+  console.log('TEST_STORE', store.getTestCounter, store);
   useEffect(() => {
-    // console.log('ACTIONS', actions.test(''), getters);
-    // actions.test();
-    testStore.incCounter();
+    actions.incCounter();
   }, []);
 
   const test = getters.getCounterDoubled;
 
-  console.log(
-    testStore.getWithInput(10),
-    testStore.counter,
-    testStore.getCounterDoubled
-  );
+  console.log(store.getWithInput(10), store.counter, store.getCounterDoubled);
 
   return (
     <div>
@@ -35,7 +29,7 @@ export const Comp3AA: React.FC = () => {
       </h2>
 
       <ul>
-        <li>{test}</li>
+        <li>{`${test}`}</li>
         {/* <li>{getters.getDoubledMultiplied(4)}</li> */}
       </ul>
     </div>

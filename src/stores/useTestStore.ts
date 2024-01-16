@@ -23,12 +23,13 @@ export const useTestStore = defineStore('TestStore', {
     },
   },
   getters: {
-    getCounterDoubled: (state) => {
+    getCounterDoubled(state): number {
       console.log('DOUBLE_COUNT', this, state);
       return state.counter * 2;
     },
-    getDoubledMultiplied() {
-      return (context: number) => {
+    getDoubledMultiplied(state) {
+      return (context: number): number => {
+        console.log('STATE', state);
         return this.getCounterDoubled * context;
       };
     },

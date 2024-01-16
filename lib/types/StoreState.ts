@@ -1,1 +1,1 @@
-export type StoreState = Record<string, any>;
+export type StoreState<S> = S & ThisType<S>;

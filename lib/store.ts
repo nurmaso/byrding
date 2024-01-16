@@ -1,13 +1,7 @@
 import { StoreActions } from './types/StoreActions';
 import { StoreDefinition } from './types/StoreDefiniton';
-import { StoreState } from './types/StoreState';
 
-export class StoreClass<
-  N extends string,
-  S extends StoreState,
-  G extends object,
-  A
-> {
+export class StoreClass<S, G, A> {
   state: S;
   getters: G;
   actions: StoreActions<S, G, A>;
@@ -16,13 +10,13 @@ export class StoreClass<
   updateCallback?: (state: S) => void;
 
   constructor(
-    name: N,
+    name: string,
     defintion: StoreDefinition<S, G, A>,
     updateCallback?: (state: S) => void
   ) {
     this.name = name;
     this.state = defintion.state;
-    this.getters = defintion.getters;
+    this.getters = defintion.getters || ({} as G);
     this.actions = defintion.actions;
     this.init = defintion.init;
     this.updateCallback = updateCallback;
@@ -33,15 +27,13 @@ export class StoreClass<
   }
 
   initState() {
-    Object.keys(this.state).forEach((value) => {
+    Object.keys(this.state || {}).forEach((value) => {
       Object.defineProperty(this, `${String(value)}`, {
         get() {
           return this.state[value];
         },
         set(val) {
-          console.log('SETTER', val);
           this.state[value] = val;
-          console.log('this.updateCallback', this.updateCallback, this.state);
           this.updateCallback?.(this);
         },
       });
@@ -49,8 +41,8 @@ export class StoreClass<
   }
 
   initGetters() {
-    Object.keys(this.getters).forEach((value) => {
-      Object.defineProperty(this, `${value}` as keyof G, {
+    Object.keys(this.getters || {}).forEach((value) => {
+      Object.defineProperty(this, value as keyof G, {
         get() {
           return this.getters[value].bind(this)(this.state);
         },
@@ -72,7 +64,6 @@ export class StoreClass<
   }
 }
 
-// const StoreConstructorFunction = <N, S, G, A>function(this: )
 export interface IConstructor<
   T extends object = object,
   TA extends unknown[] = unknown[]
@@ -80,13 +71,8 @@ export interface IConstructor<
   new (...args: TA): T;
 }
 
-export const createStore = <
-  N extends string,
-  S extends StoreState,
-  G extends object,
-  A
->(
-  name: N,
+export const createStore = <S, G, A>(
+  name: string,
   context: StoreDefinition<S, G, A>,
   callback?: (store: S) => void
 ) => {
@@ -94,5 +80,5 @@ export const createStore = <
     name,
     context,
     callback
-  ) as unknown as typeof StoreClass & S & G & A;
+  ) as unknown as typeof StoreClass & S & G & A & StoreDefinition<S, G, A>;
 };

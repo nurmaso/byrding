@@ -12,21 +12,20 @@ const calledTimes = calls();
 export const Comp2: React.FC = () => {
   const counter = calledTimes.next().value;
 
-  const { state, actions, testStore } = useTestStore();
-  console.log('here 2', state);
+  const { state, store } = useTestStore();
 
   const [value] = useState(33);
 
   return (
     <div>
       <h1>
-        comp2 hi + render {counter || 0} + {state.counter} + {testStore.counter}
+        comp2 hi + render {counter || 0} + {state.counter} + {store.counter}
       </h1>
       <button
         onClick={() => {
           // actions?.incCounter();
-          testStore.counter++;
-          testStore.incCounter();
+          store.counter++;
+          // store.incCounter();
         }}
       >
         test
