@@ -4,18 +4,11 @@ type Hooks = {
   };
 };
 
-// type StoreStateMap<N, S> = {
-//   [key of N]: {}
-// }
-
 class RootStore {
   #stores = new Map();
   hooks: Hooks = {};
 
-  // #storeState = {};
-
   handleUpdate(name: string, context: any) {
-    console.log('handleUpdate', this.hooks, name);
     if (!this.hooks[name]) return;
     for (const [, value] of Object.entries(this.hooks[name])) {
       value?.(context);

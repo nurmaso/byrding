@@ -10,7 +10,6 @@ const App: React.FC = () => {
       <Comp1 />
       <Comp2 />
       <Comp3 />
-      {/* <Comp4 /> */}
     </div>
   );
 };

@@ -1,9 +1,13 @@
-import { useEffect, useReducer, useState, useCallback } from 'react';
+import { useEffect, useReducer, useCallback } from 'react';
 import rootStore from '../rootStore';
-import { StoreDefinition } from '../types/StoreDefiniton';
-import { StoreActions } from '../types/StoreActions';
-import { StoreGetters } from '../types/StoreGetters';
+import {
+  DefineStoreResponse,
+  StoreDefinition,
+  UseStoreResponse,
+} from '../types/StoreDefiniton';
 import { StoreClass, createStore } from '../store';
+import { defineActions } from './defineActions';
+import { defineGetters } from './defineGetters';
 
 function* componentIdGen() {
   let index = 1;
@@ -12,64 +16,12 @@ function* componentIdGen() {
 
 const idGen = componentIdGen();
 
-const initGetters = <S, G>(
-  storeGetters: StoreGetters<S, G> = {} as StoreGetters<S, G>,
-  state: S & ThisType<S>
-): StoreGetters<S, G> => {
-  const result = {} as StoreGetters<S, G>;
-
-  for (const getter in storeGetters) {
-    Object.assign(result, {
-      [getter]: (function () {
-        const res = storeGetters[getter].bind(result)(state);
-        if (typeof res === 'function') res.bind(storeGetters);
-        return res;
-      })(),
-    });
-  }
-
-  return result;
-};
-
-const useActions = <A, S, G>(
-  name: string,
-  actions: StoreActions<S, G, A>,
-  context: StoreDefinition<S, G, A>
-): StoreActions<S, G, A> => {
-  const result = {} as StoreActions<S, G, A>;
-  for (const action in actions) {
-    Object.assign(result, {
-      [action]: (...args: any[]) => {
-        console.log('CONTEXT', context.state);
-        actions[action].bind(context)(...args);
-        if (
-          context.state &&
-          JSON.stringify(context.state) !== JSON.stringify(rootStore.get(name))
-        ) {
-          rootStore.handleUpdate(name, context);
-        }
-      },
-    });
-  }
-  return result;
-};
-
-export type UseStoreResponse<S, G, A> = Omit<
-  Required<StoreDefinition<S, G, A>>,
-  'init'
-> & {
-  setValue: () => void;
-  store: typeof StoreClass & S & A & G & StoreDefinition<S, G, A>;
-};
-
-export type DefineStoreResponse<S, G, A> = () => UseStoreResponse<S, G, A>;
-
 export const defineStore = <S, G, A>(
   name: string,
   context: StoreDefinition<S, G, A>
-  // ) => {
 ): DefineStoreResponse<S, G, A> => {
   context.init?.bind(context)();
+
   const useStore = (): UseStoreResponse<S, G, A> => {
     const [, setUpdateComponent] = useReducer((x) => x + 1, 0);
 
@@ -87,8 +39,9 @@ export const defineStore = <S, G, A>(
       G &
       A &
       StoreDefinition<S, G, A>;
+
     const state = store.state;
-    const getters = initGetters(store.getters, state);
+    const getters = defineGetters(store.getters, state);
 
     const updateValues = () => {
       setUpdateComponent();
@@ -96,17 +49,21 @@ export const defineStore = <S, G, A>(
 
     useEffect(() => {
       const id = idGen.next().value as number;
-      if (!rootStore.hooks[String(name)]) rootStore.hooks[String(name)] = {};
 
+      if (!rootStore.hooks[String(name)]) rootStore.hooks[String(name)] = {};
       rootStore.hooks[String(name)][id] = updateValues;
+
       return () => {
         delete rootStore.hooks[String(name)][id];
       };
     }, []);
-    const actions = useActions(String(name), store.actions, context);
 
-    return { state, getters, actions, setValue: updateValues, store };
+    const actions = defineActions(store.actions, store);
+
+    return { state, getters, actions, store };
   };
+
   useStore.$id = name;
+
   return useStore;
 };
