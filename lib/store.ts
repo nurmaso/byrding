@@ -53,6 +53,7 @@ export class StoreClass<S, G, A> {
     >;
     keys.forEach((value) => {
       Object.defineProperty(this, `${String(value)}`, {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         value: (...args: any[]) => {
           return this.actions[value].bind(this)(...args);
         },
