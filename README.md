@@ -65,16 +65,24 @@ If you like pinia, but you want/like/...have to use react.
 
 This store tries to make life easier and focus on the actual functionality and reduce a amount of boilerplate you have to write. AND probably most important reason: I just wanted to play around with react and typescript.
 
-If you think it's not the right thing to use, there is a lot our there, got and catch em all :)
+If you think it's not the right thing to use, there is a lot our there, go and catch 'em all :)
 
 If you have any idea to improve or want to participate, please reach out to me or just fork it!
 
 ## Todos
 
-[ ] Proper typescript support for getters
+- [x] Proper typescript support for getters
+- [x] store class implementation
+  - [ ] use store class as return value to reduce typing
+  - [ ] avoid already declared names
+- [ ] define dev tools
+- [x] native assign handling like store.value = 'new value' -> update()
 
-- Idea to resolve:
-  I could move the created actions, getters and methods to a rootStoreMap. This would make them available and I could use them to reference back.
+### store class implementation
+
+#### use store class as return value to reduce typing
+
+e.g. defineStore return object
 
 ```
 this.state.value -> this.value
@@ -82,5 +90,8 @@ this.getters.getter -> this.getter
 this.actions.method -> this.method
 ```
 
-- Add native assign handling to state values. state.value = 'newValue'.
-  - This could be integrated with a setter and getter handling (maybe in the root store?)
+### native assign handling
+
+~~- Add native assign handling to state values. state.value = 'newValue'.~~
+
+~~- This could be integrated with a setter and getter handling (maybe in the root store?)~~
