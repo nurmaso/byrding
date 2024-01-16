@@ -41,6 +41,7 @@ export const defineStore = <S, G, A>(
       StoreDefinition<S, G, A>;
 
     const state = store.state;
+
     const getters = defineGetters(store.getters, state);
 
     const updateValues = () => {

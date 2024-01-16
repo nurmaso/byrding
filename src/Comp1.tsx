@@ -9,8 +9,7 @@ const calledTimes = calls();
 export const Comp1: React.FC = () => {
   const counter = calledTimes.next().value;
 
-  const { state, actions } = useTestStore();
-  console.log('here 1', state);
+  const { state, actions, store } = useTestStore();
 
   return (
     <div>

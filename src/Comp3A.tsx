@@ -9,7 +9,6 @@ function* calls() {
 const calledTimes = calls();
 
 export const Comp3A: React.FC = () => {
-  console.log('COMP 3 A');
   const counter = calledTimes.next().value;
 
   return (

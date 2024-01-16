@@ -12,8 +12,6 @@ const calledTimes = calls();
 export const Comp2ConstProp: React.FC<Props> = (props: Props) => {
   const counter = calledTimes.next().value;
 
-  console.log('here 2 Const Prop', counter, props.value);
-
   return (
     <div>
       <h1>

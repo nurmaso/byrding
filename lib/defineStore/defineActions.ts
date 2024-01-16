@@ -10,7 +10,6 @@ export const defineActions = <A, S, G>(
   for (const action in actions) {
     Object.assign(result, {
       [action]: (...args: any[]) => {
-        console.log('CONTEXT', context.state);
         actions[action].bind(context)(...args);
       },
     });
