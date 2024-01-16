@@ -9,7 +9,7 @@ export const defineActions = <A, S, G>(
 
   for (const action in actions) {
     Object.assign(result, {
-      [action]: (...args: any[]) => {
+      [action]: (...args: unknown[]) => {
         actions[action].bind(context)(...args);
       },
     });

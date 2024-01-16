@@ -12,7 +12,7 @@ const calledTimes = calls();
 export const Comp3AA: React.FC = () => {
   const counter = calledTimes.next().value;
 
-  const { state, getters, actions, store } = useTestStore();
+  const { state, getters, actions } = useTestStore();
 
   useEffect(() => {
     actions.incCounter();
@@ -24,7 +24,7 @@ export const Comp3AA: React.FC = () => {
 
   return (
     <div>
-      <h1>Render Comp 3 AA</h1>
+      <h1>Render Comp 3 AA for: {state.welcome}</h1>
       <h2>
         {state.counter} – {counter || 0}
       </h2>

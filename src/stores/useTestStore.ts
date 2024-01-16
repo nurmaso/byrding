@@ -4,19 +4,23 @@ export const useTestStore = defineStore('TestStore', {
   state: {
     storeName: 'TestStore',
     counter: 0,
+    name: '',
     get getTestCounter() {
       return this.counter;
     },
     get getWithInput() {
       return (value: number) => this.counter > value;
     },
+    get welcome() {
+      return `hi ${this.name}`;
+    },
   },
   actions: {
     incCounter() {
       this.counter++;
     },
-    test(a: string): string {
-      return 'hi';
+    updateName(a: string) {
+      this.name = a;
     },
   },
   getters: {
@@ -26,6 +30,7 @@ export const useTestStore = defineStore('TestStore', {
     },
     getDoubledMultiplied(state) {
       return (context: number): number => {
+        console.log('Getter', state);
         return this.getCounterDoubled * context;
       };
     },

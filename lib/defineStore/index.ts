@@ -30,8 +30,8 @@ export const defineStore = <S, G, A>(
     }, []);
 
     if (!rootStore.has(name)) {
-      const store = createStore<S, G, A>(name, context, callback);
-      rootStore.assignStore({ name: name, store });
+      const store = createStore<S, G, A>(context, callback);
+      rootStore.assignStore({ name, store });
     }
 
     const store = rootStore.get(name) as typeof StoreClass &

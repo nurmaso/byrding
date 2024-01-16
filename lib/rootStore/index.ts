@@ -1,6 +1,6 @@
 type Hooks = {
   [key: string]: {
-    [key: number | string]: (context?: any) => void;
+    [key: number | string]: (context?: unknown) => void;
   };
 };
 
@@ -8,14 +8,14 @@ class RootStore {
   #stores = new Map();
   hooks: Hooks = {};
 
-  handleUpdate(name: string, context: any) {
+  handleUpdate(name: string, context: unknown) {
     if (!this.hooks[name]) return;
     for (const [, value] of Object.entries(this.hooks[name])) {
       value?.(context);
     }
   }
 
-  assignStore({ name, store }: { name: string; store: any }) {
+  assignStore({ name, store }: { name: string; store: unknown }) {
     this.#stores.set(name, store);
   }
 

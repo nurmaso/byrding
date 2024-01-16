@@ -6,15 +6,12 @@ export class StoreClass<S, G, A> {
   getters: G;
   actions: StoreActions<S, G, A>;
   init?: () => void;
-  name: string;
   updateCallback?: (state: S) => void;
 
   constructor(
-    name: string,
     defintion: StoreDefinition<S, G, A>,
     updateCallback?: (state: S) => void
   ) {
-    this.name = name;
     this.state = defintion.state;
     this.getters = defintion.getters || ({} as G);
     this.actions = defintion.actions;
@@ -72,13 +69,12 @@ export interface IConstructor<
 }
 
 export const createStore = <S, G, A>(
-  name: string,
   context: StoreDefinition<S, G, A>,
   callback?: (store: S) => void
 ) => {
-  return new StoreClass(
-    name,
-    context,
-    callback
-  ) as unknown as typeof StoreClass & S & G & A & StoreDefinition<S, G, A>;
+  return new StoreClass(context, callback) as unknown as typeof StoreClass &
+    S &
+    G &
+    A &
+    StoreDefinition<S, G, A>;
 };
