@@ -16,6 +16,7 @@ export const Comp3AA: React.FC = () => {
 
   useEffect(() => {
     actions.incCounter();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const test = getters.getCounterDoubled;
