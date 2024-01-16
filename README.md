@@ -8,29 +8,44 @@ The react hook store is a project inspired by pinia, a vue store plugin. It trys
 1. Create a store structure (for larger projects I prefer mind maps)
 1. Create your first store
 
-```ts
+```tsx
+// Define Store
 import { defineStore } from 'react-hook-store';
 
 const useMyStore = defineStore('MyStore', {
   state: {
     myStoreValue: 0,
+    userName: '',
+    // you can use getters in the state definition right away, if you prefer to keep values together
+    // or use getters definition
+    get welcome() {
+        return `Welcome ${this.userName}`
+    }
   },
+  // Don't use arrow functions definition in actions as they will loose context
   actions: {
     inc() {
-      this.state.myStoreValye++;
+      this.myStoreValye += 1;
     },
     multiplyBy(multiplier: number) {
-      this.state.myStoreValye *= multiplier;
+      this.myStoreValye *= multiplier;
     },
+    setUserName(name: string) {
+        this.userName = name
+    }
   },
+  // you can define getters here or in the state itself - however you prefer
+  // Don't use arrow functions as they will loose context
   getters: {
-    myStoreDouble({ state }) {
+    hello(state) {
+        return `Hello ${state.userName}`
+    },
+    myStoreDouble(state): number {
       return state.myStoreValue * 2;
     },
-    getDoubledValueMultiplied:
-      (multiplier: number) =>
-      ({ getters }) => {
-        return getters.myStoreDouble * multiplier;
+    getDoubledValueMultiplied() =>
+      (multiplier: number): number => {
+        return this.myStoreDouble * multiplier;
       },
   },
   init() {
@@ -39,6 +54,29 @@ const useMyStore = defineStore('MyStore', {
     );
   },
 });
+
+
+// React Component
+const MyComponent = () => {
+    const { store } = useMyStore()
+
+    const updateName = (e: ChangeEvent) => {
+        store.setUserName(e.target.value)
+    }
+
+    return (<>
+        <h1>{store.welcome} or do you prefer {store.hello}</h1>
+        <input value={store.userName} onUpdate={updateName} />
+        <div>
+            <span>What's your age? </span> { store.myStoreValue }
+            // you can use store function to change store value
+            <button onClick={ store.inc }>inc</button>
+            // or just assign a new value, update will be handled automatically
+            <button onClick={ () => store.myStoreValue-- }>dec</button>
+        </div>
+        <span>Let's double your age: {store.myStoreDouble}</span>
+    <>)
+}
 ```
 
 ## Project Mantra
