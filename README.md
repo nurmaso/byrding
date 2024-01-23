@@ -1,10 +1,9 @@
-# react-hook-store
-
-The react hook store is a project inspired by pinia, a vue store plugin. It trys to mimic the native js assignment handling for store components inside of react.
+# nurmaso/store
+The nurmaso/store is a project inspired by pinia, a vue store plugin. It trys to mimic the native js assignment handling for store components inside of react.
 
 ## How to use
 
-1. `npm i react-hook-store`
+1. `npm i nurmaso/store`
 1. Create a store structure (for larger projects I prefer mind maps)
 1. Create your first store
 
