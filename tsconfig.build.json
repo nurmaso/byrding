@@ -13,6 +13,7 @@
     "noEmit": true,
     "allowJs": true,
     "jsx": "react-jsx",
+    "baseUrl": "./",
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
@@ -20,7 +21,7 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitThis": true
   },
-  "include": ["src", "lib"],
+  "include": ["lib"],
   "exclude": ["node_modules"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

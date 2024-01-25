@@ -1,40 +1,25 @@
-import { defineStore } from '../../lib/defineStore';
+import { defineReactStore } from '../../lib/defineStore';
 
-export const useTestStore = defineStore('TestStore', {
+export const useTestStore = defineReactStore('TestStore', {
   state: {
     storeName: 'TestStore',
     counter: 0,
     name: '',
-    get getTestCounter() {
-      return this.counter;
-    },
-    get getWithInput() {
-      return (value: number) => this.counter > value;
-    },
-    get welcome() {
-      return `hi ${this.name}`;
-    },
   },
   actions: {
     incCounter() {
-      this.counter++;
+      console.log('THIS', this);
+      this.state.counter++;
     },
-    updateName(a: string) {
-      this.name = a;
+    test(a: string): string {
+      console.log('A', a, this, 'nope');
+      return 'hi';
     },
-  },
-  getters: {
-    getCounterDoubled(state): number {
-      console.log('DOUBLE_COUNT', this, state);
-      return state.counter * 2;
-    },
-    getDoubledMultiplied(state) {
-      return (context: number): number => {
-        console.log('Getter', state);
-        return this.getCounterDoubled * context;
-      };
+    updateName(value: string) {
+      this.name = value;
     },
   },
+  getters: {},
   init() {
     console.log('INIT', this.state);
     this.state.counter++;
