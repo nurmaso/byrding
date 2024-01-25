@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "tsc --p ./tsconfig.build.json && vite build",
+    "build": "tsc --project ./tsconfig.build.json && vite build",
     "lint": "eslint -m src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite build && vite preview"
   },
