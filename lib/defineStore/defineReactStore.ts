@@ -1,14 +1,13 @@
-import { useEffect, useReducer, useCallback } from 'react';
-import rootStore from '../rootStore';
+import { useEffect, useReducer } from 'react';
+import RootStore from '../rootStore';
 import {
   DefineStoreResponse,
   StoreDefinition,
   UseStoreResponse,
 } from '../types/StoreDefiniton';
-import { StoreClass, createStore } from '../store';
+import { SetupStoreClass, setupStore } from '../store';
 import { defineActions } from './defineActions';
 import { defineGetters } from './defineGetters';
-import { generatorId } from '../utils/generatorId';
 
 export const _defineReactStore = <S, G, A>(
   name: string,
@@ -19,22 +18,15 @@ export const _defineReactStore = <S, G, A>(
   const useStore = (): UseStoreResponse<S, G, A> => {
     const [, setUpdateComponent] = useReducer((x) => x + 1, 0);
 
-    /**
-     * @refactoring
-     * I think we could refactor the store creation/assignment process and move it to the rootStore instead
-     * This could also include the hook assignment
-     * @version (0.0.2) planned
-     */
-    const callback = useCallback((s: S) => {
-      rootStore.handleUpdate(name, s);
-    }, []);
+    const updateValues = () => {
+      setUpdateComponent();
+    };
 
-    if (!rootStore.has(name)) {
-      const store = createStore<S, G, A>(context, callback);
-      rootStore.assignStore({ name, store });
+    if (!RootStore.has(name)) {
+      setupStore<S, G, A>(name, context);
     }
 
-    const store = rootStore.get(name) as typeof StoreClass &
+    const store = RootStore.get(name) as typeof SetupStoreClass &
       S &
       G &
       A &
@@ -44,18 +36,11 @@ export const _defineReactStore = <S, G, A>(
 
     const getters = defineGetters(store.getters, state);
 
-    const updateValues = () => {
-      setUpdateComponent();
-    };
-
     useEffect(() => {
-      const id = generatorId.next().value as number;
-
-      if (!rootStore.hooks[String(name)]) rootStore.hooks[String(name)] = {};
-      rootStore.hooks[String(name)][id] = updateValues;
+      const id = RootStore.mountHook(name, updateValues);
 
       return () => {
-        delete rootStore.hooks[String(name)][id];
+        RootStore.unmounHook(name, id);
       };
     }, []);
 

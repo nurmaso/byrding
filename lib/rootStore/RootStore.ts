@@ -1,4 +1,5 @@
 import { Hooks } from '../types/Hooks';
+import { generatorId } from '../utils/generatorId';
 
 class RootStore {
   #stores = new Map();
@@ -20,6 +21,19 @@ class RootStore {
   }
   get(name: string) {
     return this.#stores.get(name);
+  }
+
+  mountHook(name: string, callback: (context: unknown) => void): number {
+    const id = generatorId.next().value as number;
+
+    if (!this.hooks[String(name)]) this.hooks[String(name)] = {};
+    this.hooks[String(name)][id] = callback;
+
+    return id;
+  }
+
+  unmounHook(name: string, id: number): void {
+    delete this.hooks[String(name)][id];
   }
 }
 

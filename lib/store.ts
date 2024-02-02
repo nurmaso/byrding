@@ -1,3 +1,4 @@
+import RootStore from './rootStore';
 import { StoreActions } from './types/StoreActions';
 import { StoreDefinition } from './types/StoreDefiniton';
 
@@ -78,4 +79,23 @@ export const createStore = <S, G, A>(
     G &
     A &
     StoreDefinition<S, G, A>;
+};
+
+export class SetupStoreClass<S, G, A> extends StoreClass<S, G, A> {
+  constructor(name: string, context: StoreDefinition<S, G, A>) {
+    super(context);
+    this.updateCallback = (s: S) => RootStore.handleUpdate(name, s);
+
+    RootStore.assignStore({ name, store: this });
+  }
+}
+
+export const setupStore = <S, G, A>(
+  name: string,
+  context: StoreDefinition<S, G, A>
+) => {
+  return new SetupStoreClass(
+    name,
+    context
+  ) as unknown as typeof SetupStoreClass & S & G & A & StoreDefinition<S, G, A>;
 };
