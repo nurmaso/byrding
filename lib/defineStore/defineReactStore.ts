@@ -19,6 +19,12 @@ export const _defineReactStore = <S, G, A>(
   const useStore = (): UseStoreResponse<S, G, A> => {
     const [, setUpdateComponent] = useReducer((x) => x + 1, 0);
 
+    /**
+     * @refactoring
+     * I think we could refactor the store creation/assignment process and move it to the rootStore instead
+     * This could also include the hook assignment
+     * @version (0.0.2) planned
+     */
     const callback = useCallback((s: S) => {
       rootStore.handleUpdate(name, s);
     }, []);
