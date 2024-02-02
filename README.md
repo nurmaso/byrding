@@ -1,4 +1,4 @@
-# nurmaso/store
+# nurmaso/pinata
 The nurmaso/store is a project inspired by pinia, a vue store plugin. It trys to mimic the native js assignment handling for store components inside of react.
 
 ## How to use
