@@ -12,4 +12,8 @@ export default defineConfig({
       '@byrding/vue':   resolve(__dirname, '../packages/vue/src/index.ts'),
     },
   },
+  server: {
+    host: true,
+    port: 80,
+  },
 })

@@ -1,0 +1,15 @@
+﻿version: "3.4"
+services:
+  pinata_dev:
+    image: node:alpine
+    container_name: pinata_dev
+    entrypoint: /bin/sh
+    ports:
+      - 5174:80
+      - 9230:9229
+    working_dir: /srv/app
+    volumes:
+      - type: bind
+        source: ./../
+        target: /srv/app/
+    tty: true
