@@ -1,6 +1,8 @@
 import { _defineReactStore } from './defineReactStore';
+import { _defineProxyStore } from "./defineProxyStore.ts";
 
 export const defineReactStore = _defineReactStore;
+export const defineProxyStore = _defineProxyStore;
 
 /**
  * Store as an interface/plugin architecture
