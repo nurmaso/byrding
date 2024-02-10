@@ -1,5 +1,5 @@
 import { _defineReactStore } from './defineReactStore';
-import { _defineProxyStore } from "./defineProxyStore.ts";
+import { _defineProxyStore } from './defineProxyStore.ts';
 
 export const defineReactStore = _defineReactStore;
 export const defineProxyStore = _defineProxyStore;

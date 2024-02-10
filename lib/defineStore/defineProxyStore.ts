@@ -1,48 +1,61 @@
-﻿import {DefineStoreResponse, StoreDefinition} from "../types/StoreDefiniton.ts";
-import RootStore from "../rootStore";
-import {setupStore} from "../store.ts";
-const watchMap= new Map<string, () => void>();
-const handler = (onUpdate, name) => {
-    return {
-        get: function (obj, prop) {
-            console.log(prop, obj[prop]);
-            if(prop !== "getters" && prop !== "watch" && prop !== "init" && prop !== 'toJSON' ) {
-                Object.defineProperty(obj[prop],'watch', (cb) => {
-                    watchMap.set(name, cb);
-                })
-            }
-           
-            if (typeof obj[prop] === "object" && obj[prop] !== null) {
-                return new Proxy(obj[prop], handler(onUpdate, name+'.'+prop));
-            }
-            return obj[prop];
-        },
-        set: function (obj, prop, value) {
-            console.log('setting prop: ', prop, 'value: ', value);
-            
-            if (obj[prop] === value) return true;
-            watchMap.get(name)?.(value,obj[prop]);
+﻿import {
+  DefineStoreResponse,
+  StoreDefinition,
+} from '../types/StoreDefiniton.ts';
+import RootStore from '../rootStore';
+import { setupStore } from '../store.ts';
+const watchMap = new Map<string, () => void>();
+const handler = (name) => {
+  return {
+    get: function (obj, prop) {
+      //   if (prop === 'watch' && typeof obj[prop] === 'function') {
+      //     watchMap.set(name, obj[prop]);
+      //   }
+      console.log(obj, prop, obj[prop]);
+      if (
+        prop !== 'actions' &&
+        typeof obj[prop] === 'object' &&
+        typeof obj[prop] !== 'function' &&
+        obj[prop] &&
+        !obj[prop].watch
+      ) {
+        obj[prop].watch = (cb) => {
+          console.log('set watch');
+          watchMap.set(name + '.' + prop, cb);
+          console.log('watchMap', watchMap);
+        };
 
-            obj[prop] = value;
-            onUpdate && onUpdate();
-            return true;
-        },
-        deleteProperty: function (obj, prop) {
-            delete obj[prop];
-            return true;
-        },
-    }
-}
+        console.log('moin', obj[prop]);
+
+        return new Proxy(obj[prop], handler(name + '.' + prop));
+      }
+      return obj[prop];
+    },
+    set: function (obj, prop, value) {
+      console.log('setting prop: ', prop, 'value: ', value);
+
+      if (obj[prop] === value) return true;
+      console.log('VALUE', value);
+      watchMap.get(name)?.(value, obj[prop]);
+      console.log(name, watchMap.get(name));
+
+      obj[prop] = value;
+      return true;
+    },
+    deleteProperty: function (obj, prop) {
+      delete obj[prop];
+      return true;
+    },
+  };
+};
 
 export const _defineProxyStore = <S, G, A>(
-    name: string,
-    context: StoreDefinition<S, G, A>,
-    onUpdate?: () => void,
+  name: string,
+  context: StoreDefinition<S, G, A>
 ): DefineStoreResponse<S, G, A> => {
+  if (!RootStore.has(name)) {
+    setupStore<S, G, A>(name, new Proxy(context, handler(name)));
+  }
 
-    if (!RootStore.has(name)) {
-        setupStore<S, G, A>(name, new Proxy(context, handler(onUpdate)));
-    }
-    
-    return RootStore.get(name);
+  return RootStore.get(name);
 };
