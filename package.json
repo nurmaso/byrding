@@ -1,32 +1,12 @@
 {
-  "name": "@nurmaso/pinata",
+  "name": "bocal-monorepo",
   "private": true,
-  "version": "0.0.2",
-  "exports": {
-    ".": {
-      "import": "./dist/main.es.js",
-      "require": "./dist/main.umd.js",
-      "types": "./dist/index.d.ts"
-    }
-  },
-  "publishConfig": {},
-  "main": "./dist/main.umd.js",
-  "module": "./dist/main.es.js",
-  "typings": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "version": "0.0.3",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --project ./tsconfig.build.json && vite build",
+    "build": "pnpm -r build",
     "lint": "eslint -m src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite build && vite preview"
-  },
-  "dependencies": {
-    "@rollup/plugin-typescript": "^11.1.6",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "rollup-plugin-typescript-paths": "^1.5.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.5",
