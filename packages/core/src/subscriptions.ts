@@ -1,78 +1,79 @@
 /**
  * subscriptions.ts
  *
- * A key-path-aware subscription map that routes change notifications to:
+ * Component-aware subscribe / notify implementation.
  *
- *   1. Exact-match listeners  — subscribed to `"user.name"` receive updates
- *      only when `user.name` changes.
+ * Each subscriber is identified by a unique `componentId` string (generated
+ * by `generateComponentId` in `createStore.ts`).  Subscribers declare which
+ * key paths they care about; passing `['*']` subscribes to every change.
  *
- *   2. Ancestor listeners     — subscribed to `"user"` receive updates for
- *      any change under `user.*`.
- *
- *   3. Wildcard listeners     — subscribed to `"*"` receive every change.
- *
- * This makes it possible for framework adapters to subscribe globally (using
- * `subscribeAny`) and re-render when anything in the store changes, while
- * advanced consumers can subscribe to fine-grained paths for optimised
- * re-renders in the future.
+ * On notification, ancestor paths are also notified so that a component
+ * subscribed to `"user"` is re-rendered when `"user.name"` changes.
  */
 
-export type ChangeCallback = (
-  keyPath: string,
-  newValue: unknown,
-  oldValue: unknown
-) => void;
+import type { StoreInstance } from './types.js'
+import { normaliseKeyPath } from './proxy.js'
 
-export type Unsubscribe = () => void;
+/**
+ * Register `componentId` as a subscriber for `keyPaths` on `store`.
+ * Returns an unsubscribe function that removes the subscriber cleanly.
+ */
+export function subscribe(
+  store: StoreInstance,
+  componentId: string,
+  keyPaths: string[],
+  callback: () => void,
+): () => void {
+  store._callbackMap.set(componentId, callback)
+  const isWildcard = keyPaths.includes('*')
 
-export class SubscriptionMap {
-  private readonly map = new Map<string, Set<ChangeCallback>>();
-
-  /** Subscribe to a specific key path (or `"*"` for all changes). */
-  subscribe(keyPath: string, callback: ChangeCallback): Unsubscribe {
-    if (!this.map.has(keyPath)) {
-      this.map.set(keyPath, new Set());
+  if (isWildcard) {
+    if (!store._updateMap.has('*')) store._updateMap.set('*', new Set())
+    store._updateMap.get('*')!.add(componentId)
+  } else {
+    for (const path of keyPaths) {
+      if (!store._updateMap.has(path)) store._updateMap.set(path, new Set())
+      store._updateMap.get(path)!.add(componentId)
     }
-    this.map.get(keyPath)!.add(callback);
-
-    return () => {
-      this.map.get(keyPath)?.delete(callback);
-    };
   }
 
-  /** Convenience: subscribe to every change in the store. */
-  subscribeAny(callback: ChangeCallback): Unsubscribe {
-    return this.subscribe('*', callback);
-  }
-
-  /**
-   * Notify all relevant listeners when `keyPath` changes.
-   *
-   * Propagation order:
-   *   1. Exact match (`"user.name"`)
-   *   2. Every ancestor (`"user"`, then `""` root — skipped if empty)
-   *   3. Wildcard (`"*"`)
-   */
-  notify(keyPath: string, newValue: unknown, oldValue: unknown): void {
-    this._fire(keyPath, keyPath, newValue, oldValue);
-
-    // Ancestor propagation: "user.address.city" → "user.address" → "user"
-    const parts = keyPath.split('.');
-    for (let i = parts.length - 1; i > 0; i--) {
-      const ancestor = parts.slice(0, i).join('.');
-      this._fire(ancestor, keyPath, newValue, oldValue);
+  return () => {
+    store._callbackMap.delete(componentId)
+    if (isWildcard) {
+      store._updateMap.get('*')?.delete(componentId)
+    } else {
+      for (const path of keyPaths) {
+        store._updateMap.get(path)?.delete(componentId)
+      }
     }
+  }
+}
 
-    // Wildcard
-    this._fire('*', keyPath, newValue, oldValue);
+/**
+ * Notify all subscribers that are interested in `rawKeyPath`.
+ *
+ * Propagation:
+ *   1. Exact match  (`"user.address.city"`)
+ *   2. All ancestors (`"user.address"`, then `"user"`)
+ *   3. Wildcard (`"*"`)
+ *
+ * Array-specific paths are normalised first (e.g. `"items.0"` → `"items"`).
+ */
+export function notify(store: StoreInstance, rawKeyPath: string): void {
+  const keyPath = normaliseKeyPath(rawKeyPath)
+  const toNotify = new Set<string>()
+
+  // Collect from exact match and all ancestors.
+  const parts = keyPath.split('.')
+  for (let i = parts.length; i > 0; i--) {
+    const path = parts.slice(0, i).join('.')
+    store._updateMap.get(path)?.forEach((id) => toNotify.add(id))
   }
 
-  private _fire(
-    listenKey: string,
-    keyPath: string,
-    newValue: unknown,
-    oldValue: unknown
-  ): void {
-    this.map.get(listenKey)?.forEach((cb) => cb(keyPath, newValue, oldValue));
+  // Wildcard catches everything.
+  store._updateMap.get('*')?.forEach((id) => toNotify.add(id))
+
+  for (const componentId of toNotify) {
+    store._callbackMap.get(componentId)?.()
   }
 }

@@ -1,71 +1,91 @@
 /**
  * @bocal/vue — defineStore
  *
- * Returns a Vue 3 composable that exposes the store as a **flat** reactive
- * object.  No `state`, `actions`, or `getters` namespacing — everything is
- * top-level:
+ * Returns a Vue 3 composable from a store definition.
  *
  * ```ts
- * // Class style
- * class CounterStore {
- *   count = 0;
- *   get double() { return this.count * 2; }
- *   increment() { this.count++; }
- * }
+ * // stores/counter.ts
+ * import { defineStore } from '@bocal/vue'
  *
- * const useCounter = defineStore('counter', CounterStore);
+ * export const useCounterStore = defineStore('counter', () => {
+ *   const store = {
+ *     count: 0,
+ *     get double() { return store.count * 2 },
+ *     increment() { store.count++ },
+ *   }
+ *   return store
+ * })
+ * ```
  *
- * // Inside a component's setup():
- * const store = useCounter();
- * // store.count, store.double, store.increment() — all top-level
+ * ```vue
+ * <!-- AComponent.vue -->
+ * <script setup lang="ts">
+ * import { useCounterStore } from '@/stores/counter'
+ * const store = useCounterStore()
+ * </script>
+ * <template>
+ *   <p>{{ store.count }}</p>
+ *   <p>{{ store.double }}</p>
+ *   <button @click="store.increment()">+</button>
+ * </template>
  * ```
  *
  * ## Reactivity model
  *
- * The store proxy lives in `@bocal/core` and is framework-agnostic.  To bridge
- * it into Vue's reactivity system we:
+ * The composable returns a Vue `shallowReactive` object.  Vue's template
+ * system tracks reads of its top-level properties.  When the Bocal core
+ * notifies a change (including from a React component mutating the same
+ * shared store), we call `Object.assign(reactiveStore, coreStore.store)`
+ * which copies the latest state + computed values into the reactive object.
+ * Vue detects the changed properties and re-renders subscribed components.
  *
- * 1. Create a `shallowRef` seeded with `0` (the store's version counter).
- * 2. Subscribe to any store change; on change we call `triggerRef` to force
- *    Vue to re-render all consumers of the composable — even though the
- *    underlying proxy reference hasn't changed.
- * 3. The subscription is torn down in `onUnmounted` to avoid leaks.
+ * Action references stay stable (same function reference on every sync),
+ * so Vue does not needlessly trigger re-renders for action-key reads.
  *
- * The composable returns the raw proxy (not the ref), so template code accesses
- * `store.count` rather than `store.value.count`.
+ * ## Lifecycle
+ *
+ * When called inside a component `setup()`, `onUnmounted` tears down the
+ * Bocal subscription.  When called outside a component context (e.g. in a
+ * Pinia-style store module), the `getCurrentInstance()` guard prevents the
+ * lifecycle call from throwing.
  */
 
-import { shallowRef, triggerRef, onUnmounted } from 'vue';
-import { getOrCreateStore } from '@bocal/core';
-import type { StoreDef } from '@bocal/core';
+import { shallowReactive, onUnmounted, getCurrentInstance } from 'vue'
+import { createStore, generateComponentId } from '@bocal/core'
 
-/**
- * Define a store and get back a Vue 3 composable.
- *
- * @param id         Unique store identifier.
- * @param definition A class constructor *or* a factory function.
- * @returns          A composable `() => T` for use inside `setup()`.
- */
-export function defineStore<T extends object>(
+export function defineStore<T extends Record<string, unknown>>(
   id: string,
-  definition: StoreDef<T>
-): () => T {
-  return function useStore(): T {
-    const entry = getOrCreateStore<T>(id, definition);
+  definition: (new () => T) | (() => T),
+) {
+  // Idempotent — same id always returns the same singleton.
+  const coreStore = createStore<T>(id, definition)
 
-    // A shallowRef used purely as a Vue reactivity trigger.  We never read
-    // its `.value` for data — the actual data lives in `entry.store`.
-    const versionRef = shallowRef(entry.getVersion());
+  /** The composable returned to the developer. */
+  return function useStore(keyPaths: string[] = ['*']): T {
+    const componentId = generateComponentId()
 
-    const unsubscribe = entry.subscribe(() => {
-      versionRef.value = entry.getVersion();
-      // triggerRef forces all computed / watchEffect / template consumers to
-      // re-evaluate even when shallowRef doesn't detect a structural change.
-      triggerRef(versionRef);
-    });
+    // Build the initial snapshot by spreading the merged store.
+    // Object.assign / spread invokes each getter on coreStore.store, so the
+    // resulting plain object holds current state values, current computed
+    // values, and action function references.
+    const reactiveStore = shallowReactive({ ...coreStore.store }) as T
 
-    onUnmounted(unsubscribe);
+    // Sync function — called on every Bocal notification.
+    // Object.assign re-reads all getters from coreStore.store (current values)
+    // and assigns them to the shallowReactive wrapper.
+    // Vue detects changed properties and queues a re-render for any component
+    // template that read those properties — including cross-framework
+    // mutations originating from React components.
+    const syncStore = () => {
+      Object.assign(reactiveStore as Record<string, unknown>, coreStore.store)
+    }
 
-    return entry.store;
-  };
+    const unsubscribe = coreStore.subscribe(componentId, keyPaths, syncStore)
+
+    if (getCurrentInstance()) {
+      onUnmounted(unsubscribe)
+    }
+
+    return reactiveStore
+  }
 }

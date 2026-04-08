@@ -1,16 +1,9 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2020",
     "lib": ["ES2020", "DOM"],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "declaration": true,
-    "declarationDir": "./dist",
     "outDir": "./dist",
-    "strict": true,
-    "skipLibCheck": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "declarationDir": "./dist"
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

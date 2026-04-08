@@ -1,44 +1,64 @@
 /**
  * classify.ts
  *
- * Normalises a store definition into a plain object instance, supporting two
- * authoring styles:
+ * Inspects an instantiated store object and buckets every key into one of
+ * three categories: state, action, or computed.
  *
- *   1. Class  — `defineStore('id', MyStore)` where `MyStore` is a class.
- *      `new MyStore()` is called; own properties AND the full prototype chain
- *      (methods, accessors) are preserved on the resulting instance.
+ * Rules (applied in order):
+ *   1. An ES `get` accessor  → computed
+ *   2. A plain function value → action
+ *   3. Anything else          → state
  *
- *   2. Closure factory — `defineStore('id', myFactory)` where `myFactory` is
- *      a plain function (not a class constructor).  The function is called with
- *      no arguments and must return a plain object.
+ * The inspection covers both **own properties** (closure objects and class
+ * fields) and the **prototype chain** (class methods and prototype getters).
+ * Closure objects have `Object.prototype` as their prototype, so the prototype
+ * walk is a harmless no-op for that style.
+ *
+ * NOTE: `Object.getOwnPropertyDescriptors` is used deliberately — reading the
+ * live value of a property would invoke ES getters and return their *return
+ * type*, hiding the fact that they are accessors.
  */
 
-export type ClassDef<T extends object> = new () => T;
-export type FactoryDef<T extends object> = () => T;
-export type StoreDef<T extends object> = ClassDef<T> | FactoryDef<T>;
-
-/**
- * Returns `true` when `fn` looks like an ES6 class (its stringified source
- * starts with the `class` keyword).  Regular functions and arrow functions
- * return `false`.
- */
-function isClass(fn: unknown): fn is ClassDef<object> {
-  if (typeof fn !== 'function') return false;
-  // ES6 classes always start with "class" in their toString()
-  return /^\s*class[\s{]/.test(Function.prototype.toString.call(fn));
+export interface Classification {
+  stateKeys: string[]
+  actionKeys: string[]
+  computedKeys: string[]
 }
 
-/**
- * Instantiates the store definition and returns the resulting object.
- *
- * For **class** definitions the instance is returned as-is so that its
- * prototype chain (getters, methods) stays intact for the Proxy to intercept.
- *
- * For **factory** definitions the returned object is used directly.
- */
-export function classify<T extends object>(definition: StoreDef<T>): T {
-  if (isClass(definition)) {
-    return new (definition as ClassDef<T>)();
+export function classify(instance: object): Classification {
+  const stateKeys: string[] = []
+  const actionKeys: string[] = []
+  const computedKeys: string[] = []
+
+  // ── Own properties ───────────────────────────────────────────────────────
+  // Class fields and closure object properties both land here.
+  for (const [key, descriptor] of Object.entries(
+    Object.getOwnPropertyDescriptors(instance),
+  )) {
+    if (typeof descriptor.get === 'function') {
+      computedKeys.push(key)
+    } else if (typeof descriptor.value === 'function') {
+      actionKeys.push(key)
+    } else {
+      stateKeys.push(key)
+    }
   }
-  return (definition as FactoryDef<T>)();
+
+  // ── Prototype chain ──────────────────────────────────────────────────────
+  // Class methods and prototype getters live here.
+  // Closure objects have Object.prototype → skipped.
+  const proto = Object.getPrototypeOf(instance)
+  if (proto && proto !== Object.prototype) {
+    for (const key of Object.getOwnPropertyNames(proto)) {
+      if (key === 'constructor') continue
+      const descriptor = Object.getOwnPropertyDescriptor(proto, key)!
+      if (typeof descriptor.get === 'function') {
+        computedKeys.push(key)
+      } else if (typeof descriptor.value === 'function') {
+        actionKeys.push(key)
+      }
+    }
+  }
+
+  return { stateKeys, actionKeys, computedKeys }
 }

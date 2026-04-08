@@ -1,91 +1,96 @@
 /**
  * @bocal/react — defineStore
  *
- * Returns a React hook that exposes the store as a **flat** reactive object.
- * No `state`, `actions`, or `getters` namespacing — everything is top-level:
+ * Returns a React hook from a store definition.  The hook is what developers
+ * export from their store files and call inside components.
  *
- * ```tsx
- * // Class style
- * class CounterStore {
- *   count = 0;
- *   get double() { return this.count * 2; }
- *   increment() { this.count++; }
- * }
+ * ```ts
+ * // stores/counter.ts
+ * import { defineStore } from '@bocal/react'
  *
- * const useCounter = defineStore('counter', CounterStore);
- *
- * function Counter() {
- *   const store = useCounter();
- *   return <button onClick={store.increment}>{store.count}</button>;
- * }
+ * export const useCounterStore = defineStore('counter', () => {
+ *   const store = {
+ *     count: 0,
+ *     get double() { return store.count * 2 },
+ *     increment() { store.count++ },
+ *   }
+ *   return store
+ * })
  * ```
  *
  * ```tsx
- * // Closure factory style
- * const useCounter = defineStore('counter', () => {
- *   const counter = {
- *     count: 0,
- *     get double() { return counter.count * 2; },
- *     increment() { counter.count++; },
- *   };
- *   return counter;
- * });
+ * // AComponent.tsx — direct access
+ * const store = useCounterStore()
+ * store.count       // state
+ * store.double      // computed
+ * store.increment() // action
+ *
+ * // BComponent.tsx — destructuring
+ * const { count, double, increment } = useCounterStore()
+ *
+ * // Selective subscription — only re-renders when `count` changes
+ * const store = useCounterStore(['count'])
  * ```
  *
  * ## Cross-framework sharing
  *
- * Export the id + definition from a shared file and import it into each
- * framework's `defineStore`:
+ * Export the ID and definition from a shared file and import into each
+ * framework's `defineStore`.  The core registry ensures the store is only
+ * initialised once.
  *
- * ```ts
- * // shared/counterStore.ts
- * export const COUNTER_ID = 'counter';
- * export class CounterStore { ... }
+ * ## Implementation notes
  *
- * // react-app/useCounter.ts
- * import { defineStore } from '@bocal/react';
- * import { COUNTER_ID, CounterStore } from '../shared/counterStore';
- * export const useCounter = defineStore(COUNTER_ID, CounterStore);
+ * `useSyncExternalStore` requires a **stable** `subscribe` reference — a new
+ * function on every render causes an infinite loop.  We stabilise it via
+ * `useRef`.  The `componentId` is also kept stable across re-renders.
  *
- * // vue-app/useCounter.ts
- * import { defineStore } from '@bocal/vue';
- * import { COUNTER_ID, CounterStore } from '../shared/counterStore';
- * export const useCounter = defineStore(COUNTER_ID, CounterStore);
- * ```
- *
- * Because `@bocal/core` holds a module-level singleton registry, both adapters
- * share the exact same store instance.
+ * `getSnapshot` returns a cached shallow copy of raw state; the cache is
+ * invalidated on each mutation so React sees a new reference and schedules a
+ * re-render.  The component then reads actual values from `coreStore.store`
+ * (the live merged object with getters) after the re-render.
  */
 
-import { useSyncExternalStore } from 'react';
-import { getOrCreateStore } from '@bocal/core';
-import type { StoreDef } from '@bocal/core';
+import { useRef } from 'react'
+import { useSyncExternalStore } from 'react'
+import { createStore, generateComponentId } from '@bocal/core'
 
-/**
- * Define a store and get back a React hook.
- *
- * @param id         Unique store identifier.  Reusing the same id across
- *                   multiple `defineStore` calls returns the same underlying
- *                   store (the definition is only evaluated once).
- * @param definition A class constructor *or* a factory function.
- * @returns          A hook `() => T` that can be called inside any React
- *                   component to get the flat, reactive store object.
- */
-export function defineStore<T extends object>(
+export function defineStore<T extends Record<string, unknown>>(
   id: string,
-  definition: StoreDef<T>
-): () => T {
-  return function useStore(): T {
-    const entry = getOrCreateStore<T>(id, definition);
+  definition: (new () => T) | (() => T),
+) {
+  // Register with core once at module load time.
+  // createStore is idempotent for the same id — safe to call multiple times.
+  const coreStore = createStore<T>(id, definition)
 
-    // useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot?)
-    //
-    // We use the monotonic version number as the snapshot.  Every mutation
-    // increments the version so React always sees a new scalar value and
-    // schedules a re-render.  The component then reads the latest value
-    // directly from `entry.store` (the reactive proxy).
-    useSyncExternalStore(entry.subscribe, entry.getVersion, entry.getVersion);
+  /** The hook returned to the developer. */
+  return function useStore(keyPaths: string[] = ['*']): T {
+    // Stable component ID — generated only on the first render.
+    const componentIdRef = useRef<string | null>(null)
+    if (!componentIdRef.current) {
+      componentIdRef.current = generateComponentId()
+    }
+    const componentId = componentIdRef.current
 
-    return entry.store;
-  };
+    // subscribe must be referentially stable across renders.
+    // A new function identity on every render causes useSyncExternalStore to
+    // re-subscribe on every render → infinite loop.
+    const subscribeRef = useRef((onStoreChange: () => void) => {
+      return coreStore.subscribe(componentId, keyPaths, onStoreChange)
+    })
+
+    // useSyncExternalStore drives re-renders.
+    //   - subscribe:    called once to register; returns unsubscribe fn.
+    //   - getSnapshot:  returns a cached object; changes reference on mutation.
+    // The snapshot is raw state only.  Computed values are re-evaluated from
+    // the merged store's getters after each re-render.
+    useSyncExternalStore(
+      subscribeRef.current,
+      coreStore.getSnapshot,
+      coreStore.getSnapshot,
+    )
+
+    // Return the live flat merged store object — reads go through getters
+    // which always return the current value.
+    return coreStore.store
+  }
 }

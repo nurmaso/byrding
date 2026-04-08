@@ -1,7 +1,7 @@
 {
   "name": "@bocal/playground",
   "version": "0.0.1",
-  "description": "Cross-framework smoke test — same store shared by React and Vue",
+  "description": "Cross-framework smoke test — CartStore shared by React and Vue",
   "private": true,
   "type": "module",
   "dependencies": {

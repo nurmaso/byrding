@@ -1,11 +1,18 @@
-export { classify } from './classify.js';
-export type { ClassDef, FactoryDef, StoreDef } from './classify.js';
+// Types (consumed by framework adapters)
+export type { StoreInstance, CoreStore } from './types.js'
 
-export { createReactiveProxy } from './proxy.js';
-export type { ChangeHandler } from './proxy.js';
+// Classification
+export { classify } from './classify.js'
+export type { Classification } from './classify.js'
 
-export { SubscriptionMap } from './subscriptions.js';
-export type { ChangeCallback, Unsubscribe } from './subscriptions.js';
+// Proxy-based reactivity
+export { createReactiveState, normaliseKeyPath } from './proxy.js'
 
-export { getOrCreateStore, deleteStore } from './createStore.js';
-export type { StoreEntry } from './createStore.js';
+// Subscription map
+export { subscribe, notify } from './subscriptions.js'
+
+// Store registry
+export { storeRegistry } from './registry.js'
+
+// Core primitive — used by framework adapters only
+export { createStore, generateComponentId } from './createStore.js'
