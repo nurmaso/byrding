@@ -1,0 +1,245 @@
+/* ── Reset & base ────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  background: #f8fafc;
+  color: #1e293b;
+  line-height: 1.5;
+}
+
+code {
+  font-family: 'Menlo', 'Consolas', monospace;
+  font-size: 12px;
+  background: #f1f5f9;
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: #0f172a;
+}
+
+/* ── App shell ───────────────────────────────────────────────────────────── */
+.app { max-width: 1400px; margin: 0 auto; padding: 24px 20px 60px; }
+
+.app__header { margin-bottom: 20px; }
+
+.app__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.app__subtitle { color: #64748b; font-size: 14px; }
+
+.highlight {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+.highlight--amber { background: #fef3c7; color: #92400e; }
+
+/* ── Controls ────────────────────────────────────────────────────────────── */
+.controls {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.controls__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.controls__row:last-child { margin-bottom: 0; }
+
+.controls__label {
+  min-width: 150px;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.controls__hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.btn:hover { opacity: 0.85; }
+.btn:active { opacity: 0.7; }
+.btn em { font-style: normal; font-size: 11px; opacity: 0.7; }
+
+.btn--blue   { background: #dbeafe; color: #1d4ed8; border-color: #bfdbfe; }
+.btn--green  { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+.btn--purple { background: #ede9fe; color: #7c3aed; border-color: #ddd6fe; }
+
+/* ── Legend ──────────────────────────────────────────────────────────────── */
+.legend {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #475569;
+}
+.legend__item { display: flex; align-items: center; gap: 8px; }
+.legend__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.legend__dot--blue { background: #3b82f6; }
+.legend__dot--red  { background: #ef4444; }
+
+/* ── Two-column layout ───────────────────────────────────────────────────── */
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .columns { grid-template-columns: 1fr; }
+}
+
+.column {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.column--store { border-top: 3px solid #3b82f6; }
+.column--props  { border-top: 3px solid #ef4444; }
+
+.column__title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+.column__title--blue { color: #1d4ed8; }
+.column__title--red  { color: #dc2626; }
+
+/* ── Section ─────────────────────────────────────────────────────────────── */
+.section { display: flex; flex-direction: column; gap: 10px; }
+
+.section__intro {
+  font-size: 12px;
+  color: #475569;
+  background: #f1f5f9;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+}
+
+.section__intro--warning {
+  background: #fff7ed;
+  color: #9a3412;
+  border: 1px solid #fed7aa;
+}
+
+.widget-list { display: flex; flex-direction: column; gap: 8px; }
+
+/* ── ComponentBox ────────────────────────────────────────────────────────── */
+.component-box {
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #3b82f6;
+  border-radius: 6px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.component-box__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.component-box__title {
+  font-family: 'Menlo', 'Consolas', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.component-box__badge {
+  font-family: 'Menlo', 'Consolas', monospace;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.component-box__body { padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+
+.value-row { font-size: 13px; }
+.value-row strong { color: #0f172a; }
+
+.children-list { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+
+.re-render-note {
+  font-size: 11px;
+  color: #ef4444;
+  font-style: italic;
+}
+
+/* ── Deep tree ───────────────────────────────────────────────────────────── */
+.deep-tree { margin-top: 12px; }
+
+.deep-tree__legend {
+  font-size: 12px;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
+
+/* ── RenderCounter ───────────────────────────────────────────────────────── */
+.render-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.render-counter__label {
+  font-family: 'Menlo', 'Consolas', monospace;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+/* Animation: badge fades from amber → grey after each render. */
+@keyframes flash-out {
+  0%   { background: #fbbf24; color: #78350f; }
+  100% { background: #f1f5f9; color: #475569; }
+}
+
+.render-counter__badge {
+  display: inline-block;
+  font-family: 'Menlo', 'Consolas', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 20px;
+  /* Each render creates a new DOM element (via key) → animation restarts */
+  animation: flash-out 0.6s ease-out forwards;
+}
