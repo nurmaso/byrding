@@ -2,3 +2,4 @@ packages:
   - 'packages/*'
   - 'playground'
   - 'render-demo'
+  - 'docs'

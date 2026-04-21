@@ -9,8 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@bocal/core": "file:../packages/core",
-    "@bocal/react": "file:../packages/react",
+    "@bocal/core": "workspace:*",
+    "@bocal/react": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
