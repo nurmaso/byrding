@@ -1,14 +1,24 @@
 {
   "name": "@bocal/vue",
   "version": "0.0.1",
-  "description": "Vue 3 adapter for @bocal/core — defineStore returns a composable via shallowRef + triggerRef",
+  "description": "Vue 3 adapter for @bocal/core — defineStore returns a composable via shallowReactive",
   "type": "module",
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
+  "files": ["dist", "src"],
   "scripts": {
-    "build": "tsc --project tsconfig.json"
+    "build": "tsc --project tsconfig.json",
+    "prepublishOnly": "pnpm run build"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "dependencies": {
     "@bocal/core": "workspace:*"

@@ -1,0 +1,11 @@
+{
+  "name": "@bocal/vue",
+  "version": "0.0.1",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publish": {
+    "include": ["src/", "LICENSE", "README.md"],
+    "exclude": ["dist/", "node_modules/"]
+  }
+}

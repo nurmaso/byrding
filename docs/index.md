@@ -24,6 +24,20 @@ features:
     details: No actions/getters/state buckets. Just write an object or a class. The adapter returns a hook or composable that gives back the live store.
 ---
 
+## Install
+
+::: code-group
+```bash [npm]
+npm install @bocal/react   # or @bocal/vue / @bocal/core
+```
+```bash [JSR]
+npx jsr add @bocal/react   # or @bocal/vue / @bocal/core
+```
+```bash [pnpm]
+pnpm add @bocal/react
+```
+:::
+
 ## At a glance
 
 ```ts

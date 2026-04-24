@@ -8,12 +8,40 @@ bocal/
 │   ├── core/                  @bocal/core — framework-agnostic reactivity
 │   ├── react/                 @bocal/react — useStore hook via useSyncExternalStore
 │   └── vue/                   @bocal/vue — composable via shallowReactive
-├── playground/                cross-framework smoke test (React + Vue share one CartStore)
+├── playground/                cross-framework code sample (React + Vue share one CartStore)
 ├── render-demo/               re-render visualiser (React)
 └── docs/                      this documentation (VitePress)
 ```
 
-## Install
+## Install from npm
+
+```bash
+# React project
+npm install @bocal/react
+
+# Vue project
+npm install @bocal/vue
+
+# Vanilla JS / custom adapter
+npm install @bocal/core
+```
+
+## Install from JSR
+
+```bash
+# React project
+npx jsr add @bocal/react
+
+# Vue project
+npx jsr add @bocal/vue
+
+# Vanilla JS / custom adapter
+npx jsr add @bocal/core
+```
+
+> JSR takes TypeScript source directly — no compilation step needed for JSR consumers.
+
+## Contributing / local dev
 
 The repo uses [pnpm workspaces](https://pnpm.io/workspaces). Clone it and install from the root:
 
@@ -78,5 +106,19 @@ export function Counter() {
   )
 }
 ```
+
+## Publishing a new version
+
+Create a version tag — the Actions workflow publishes to both npm and JSR automatically:
+
+```bash
+git tag v0.1.0
+git push --tags
+```
+
+> **Prerequisite** — set up once:
+> 1. Claim `@bocal` org on [npmjs.com](https://www.npmjs.com/org/create) and [jsr.io](https://jsr.io/new).
+> 2. Add `NPM_TOKEN` secret to GitHub repo → Settings → Secrets → Actions.
+> 3. Enable GitHub Actions publishing on jsr.io for each package (`@bocal/core`, `@bocal/react`, `@bocal/vue`).
 
 Next: [Defining stores](./defining-stores) walks through the two definition styles and their tradeoffs.

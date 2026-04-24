@@ -15,7 +15,17 @@ bocal/
 └── docs/                      VitePress documentation site
 ```
 
-## Quick start
+## Install
+
+```bash
+# npm
+npm install @bocal/react      # or @bocal/vue / @bocal/core
+
+# JSR (TypeScript source, OIDC-signed provenance)
+npx jsr add @bocal/react
+```
+
+## Repo quick start (contributing)
 
 This repo uses [pnpm workspaces](https://pnpm.io/workspaces). From the repo root:
 
