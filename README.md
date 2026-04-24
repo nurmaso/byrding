@@ -1,135 +1,70 @@
-# nurmaso/pinata
+# bocal
 
-The nurmaso/store is a project inspired by pinia, a vue store plugin. It trys to mimic the native js assignment handling for store components inside of react.
+A tiny reactive store with a vanilla-JS core and thin React + Vue adapters. One store can back components in multiple frameworks at the same time.
 
-## How to use
+## Repo layout
 
-1. `npm i nurmaso/store`
-1. Create a store structure (for larger projects I prefer mind maps)
-1. Create your first store
+```
+bocal/
+├── packages/
+│   ├── core/                  @bocal/core    — framework-agnostic reactivity
+│   ├── react/                 @bocal/react   — useStore hook (useSyncExternalStore)
+│   └── vue/                   @bocal/vue     — composable (shallowReactive)
+├── playground/                cross-framework code sample — React + Vue share one CartStore
+├── render-demo/               re-render visualiser (React)
+└── docs/                      VitePress documentation site
+```
+
+## Quick start
+
+This repo uses [pnpm workspaces](https://pnpm.io/workspaces). From the repo root:
+
+```bash
+pnpm install
+
+pnpm dev:render-demo     # re-render visualiser on http://localhost:5174
+pnpm docs:dev            # docs site (VitePress) on http://localhost:5173
+pnpm build               # build all library packages
+```
+
+## A taste
+
+```ts
+// stores/counter.ts
+import { defineStore } from '@bocal/react'
+
+export const useCounterStore = defineStore('counter', () => {
+  const store = {
+    count: 0,
+    get double() { return store.count * 2 },
+    increment() { store.count++ },
+  }
+  return store
+})
+```
 
 ```tsx
-// Import defineStore from '@nurmaso/pinata'
-import { defineStore } from '@nurmaso/pinata';
-
-const useMyStore = defineStore('MyStore', {
-  state: {
-    myStoreValue: 0,
-    userName: '',
-    // you can use getters in the state definition right away, if you prefer to keep values together
-    // or use getters definition
-    get welcome() {
-        return `Welcome ${this.userName}`
-    }
-  },
-  // Don't use arrow functions definition in actions as they will loose context
-  actions: {
-    inc() {
-      this.myStoreValye += 1;
-    },
-    multiplyBy(multiplier: number) {
-      this.myStoreValye *= multiplier;
-    },
-    setUserName(name: string) {
-        this.userName = name
-    }
-  },
-  // you can define getters here or in the state itself - however you prefer
-  // Don't use arrow functions as they will loose context
-  getters: {
-    hello(state) {
-        return `Hello ${state.userName}`
-    },
-    myStoreDouble(state): number {
-      return state.myStoreValue * 2;
-    },
-    getDoubledValueMultiplied() =>
-      (multiplier: number): number => {
-        return this.myStoreDouble * multiplier;
-      },
-  },
-  init() {
-    console.log(
-      `This get called once, as soon as this store gets initialised for the first time`
-    );
-  },
-});
-
-
-// React Component
-const MyComponent = () => {
-    const { store } = useMyStore()
-
-    const updateName = (e: ChangeEvent) => {
-        store.setUserName(e.target.value)
-    }
-
-    return (<>
-        <h1>{store.welcome} or do you prefer {store.hello}</h1>
-        <input value={store.userName} onUpdate={updateName} />
-        <div>
-            <span>What's your age? </span> { store.myStoreValue }
-            // you can use store function to change store value
-            <button onClick={ store.inc }>inc</button>
-            // or just assign a new value, update will be handled automatically
-            <button onClick={ () => store.myStoreValue-- }>dec</button>
-        </div>
-        <span>Let's double your age: {store.myStoreDouble}</span>
-    <>)
+// Counter.tsx
+function Counter() {
+  const store = useCounterStore(['count'])   // re-render only when count changes
+  return (
+    <button onClick={store.increment}>
+      {store.count} × 2 = {store.double}
+    </button>
+  )
 }
 ```
 
-## Project Mantra
+## Documentation
 
-1. Write less code
-1. Reduce it if possible
-1. Don't try to over-engineer
+Full guide and API reference in [`docs/`](./docs). Serve locally with `pnpm docs:dev`, or build static HTML with `pnpm docs:build`.
 
-## Why don't use Context?
+- [Getting started](./docs/guide/getting-started.md)
+- [Defining stores](./docs/guide/defining-stores.md) (class vs closure)
+- [Selective subscriptions](./docs/guide/selective-subscriptions.md)
+- [Cross-framework sharing](./docs/guide/cross-framework.md)
+- [`@bocal/core`](./docs/api/core.md) / [`@bocal/react`](./docs/api/react.md) / [`@bocal/vue`](./docs/api/vue.md)
 
-React Context invokes all children on a change of the context. This is not optimal, if you have a deep nested page with a lot of different scopes. These scopes could be split in different stores. Yes, we could scope the context as well, but this would limit us in the DOM structure.
+## License
 
-## Why don't use other stores?
-
-Tbh, there is no good reason! I think it's about your personal taste or what's best for the project/company you work for. This is **not** a well maintained project yet. So don't expect anything... Or just jump in and help yourself.
-
-## What is a valid use case for a store or for this store?
-
-If you have full control over the store context and you don't want to control other stores based on a dispatch call (tbh I'm not a big Redux fan :P )
-If you don't want to pass state values as properties.
-If you like pinia, but you want/like/...have to use react.
-
-## Thoughts
-
-This store tries to make life easier and focus on the actual functionality and reduce a amount of boilerplate you have to write. AND probably most important reason: I just wanted to play around with react and typescript.
-
-If you think it's not the right thing to use, there is a lot our there, go and catch 'em all :)
-
-If you have any idea to improve or want to participate, please reach out to me or just fork it!
-
-## Todos
-
-- [x] Proper typescript support for getters
-- [x] store class implementation
-  - [ ] use store class as return value to reduce typing
-  - [ ] avoid already declared names
-- [ ] define dev tools
-- [x] native assign handling like store.value = 'new value' -> update()
-
-### store class implementation
-
-#### use store class as return value to reduce typing
-
-e.g. defineStore return object
-
-```
-this.state.value -> this.value
-this.getters.getter -> this.getter
-this.actions.method -> this.method
-```
-
-### native assign handling
-
-~~- Add native assign handling to state values. state.value = 'newValue'.~~
-
-~~- This could be integrated with a setter and getter handling (maybe in the root store?)~~
+MIT

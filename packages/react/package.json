@@ -10,8 +10,10 @@
   "scripts": {
     "build": "tsc --project tsconfig.json"
   },
+  "dependencies": {
+    "@bocal/core": "workspace:*"
+  },
   "peerDependencies": {
-    "@bocal/core": "*",
     "react": ">=18.0.0"
   },
   "devDependencies": {
