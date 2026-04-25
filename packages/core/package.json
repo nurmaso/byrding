@@ -1,5 +1,5 @@
 {
-  "name": "@bocal/core",
+  "name": "@byrding/core",
   "version": "0.0.1",
   "description": "Vanilla JS core — Proxy reactivity, subscription map, store registry",
   "type": "module",

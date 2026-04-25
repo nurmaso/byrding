@@ -2,7 +2,7 @@
 layout: home
 
 hero:
-  name: bocal
+  name: byrding
   text: A tiny reactive store.
   tagline: Vanilla-JS core, thin React and Vue adapters, one store shared across frameworks.
   actions:
@@ -28,13 +28,13 @@ features:
 
 ::: code-group
 ```bash [npm]
-npm install @bocal/react   # or @bocal/vue / @bocal/core
+npm install @byrding/react   # or @byrding/vue / @byrding/core
 ```
 ```bash [JSR]
-npx jsr add @bocal/react   # or @bocal/vue / @bocal/core
+npx jsr add @byrding/react   # or @byrding/vue / @byrding/core
 ```
 ```bash [pnpm]
-pnpm add @bocal/react
+pnpm add @byrding/react
 ```
 :::
 
@@ -42,7 +42,7 @@ pnpm add @bocal/react
 
 ```ts
 // stores/counter.ts
-import { defineStore } from '@bocal/react'
+import { defineStore } from '@byrding/react'
 
 export const useCounterStore = defineStore('counter', () => {
   const store = {
@@ -75,9 +75,9 @@ function Counter() {
 
 | Package | Description |
 | --- | --- |
-| [`@bocal/core`](/api/core) | Vanilla JS core — Proxy reactivity, subscription map, store registry. |
-| [`@bocal/react`](/api/react) | React adapter — `defineStore` returns a hook via `useSyncExternalStore`. |
-| [`@bocal/vue`](/api/vue) | Vue 3 adapter — `defineStore` returns a composable backed by `shallowReactive`. |
+| [`@byrding/core`](/api/core) | Vanilla JS core — Proxy reactivity, subscription map, store registry. |
+| [`@byrding/react`](/api/react) | React adapter — `defineStore` returns a hook via `useSyncExternalStore`. |
+| [`@byrding/vue`](/api/vue) | Vue 3 adapter — `defineStore` returns a composable backed by `shallowReactive`. |
 
 ## Demos
 

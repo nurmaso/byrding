@@ -1,7 +1,7 @@
 {
-  "name": "@bocal/react",
+  "name": "@byrding/react",
   "version": "0.0.1",
-  "description": "React adapter for @bocal/core — defineStore returns a hook via useSyncExternalStore",
+  "description": "React adapter for @byrding/core — defineStore returns a hook via useSyncExternalStore",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -21,7 +21,7 @@
     "provenance": true
   },
   "dependencies": {
-    "@bocal/core": "workspace:*"
+    "@byrding/core": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=18.0.0"

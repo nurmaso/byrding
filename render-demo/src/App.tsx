@@ -7,7 +7,7 @@ export function App() {
     <div className="app">
       {/* ── Header ─────────────────────────────────────────────── */}
       <header className="app__header">
-        <h1 className="app__title">@bocal/react — Re-render Visualiser</h1>
+        <h1 className="app__title">@byrding/react — Re-render Visualiser</h1>
         <p className="app__subtitle">
           Badges flash{' '}
           <span className="highlight highlight--amber">amber</span> on each

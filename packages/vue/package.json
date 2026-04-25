@@ -1,7 +1,7 @@
 {
-  "name": "@bocal/vue",
+  "name": "@byrding/vue",
   "version": "0.0.1",
-  "description": "Vue 3 adapter for @bocal/core — defineStore returns a composable via shallowReactive",
+  "description": "Vue 3 adapter for @byrding/core — defineStore returns a composable via shallowReactive",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -21,7 +21,7 @@
     "provenance": true
   },
   "dependencies": {
-    "@bocal/core": "workspace:*"
+    "@byrding/core": "workspace:*"
   },
   "peerDependencies": {
     "vue": ">=3.0.0"

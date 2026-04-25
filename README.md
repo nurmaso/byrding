@@ -1,15 +1,15 @@
-# bocal
+# byrding
 
 A tiny reactive store with a vanilla-JS core and thin React + Vue adapters. One store can back components in multiple frameworks at the same time.
 
 ## Repo layout
 
 ```
-bocal/
+byrding/
 ├── packages/
-│   ├── core/                  @bocal/core    — framework-agnostic reactivity
-│   ├── react/                 @bocal/react   — useStore hook (useSyncExternalStore)
-│   └── vue/                   @bocal/vue     — composable (shallowReactive)
+│   ├── core/                  @byrding/core    — framework-agnostic reactivity
+│   ├── react/                 @byrding/react   — useStore hook (useSyncExternalStore)
+│   └── vue/                   @byrding/vue     — composable (shallowReactive)
 ├── playground/                cross-framework code sample — React + Vue share one CartStore
 ├── render-demo/               re-render visualiser (React)
 └── docs/                      VitePress documentation site
@@ -19,10 +19,10 @@ bocal/
 
 ```bash
 # npm
-npm install @bocal/react      # or @bocal/vue / @bocal/core
+npm install @byrding/react      # or @byrding/vue / @byrding/core
 
 # JSR (TypeScript source, OIDC-signed provenance)
-npx jsr add @bocal/react
+npx jsr add @byrding/react
 ```
 
 ## Repo quick start (contributing)
@@ -41,7 +41,7 @@ pnpm build               # build all library packages
 
 ```ts
 // stores/counter.ts
-import { defineStore } from '@bocal/react'
+import { defineStore } from '@byrding/react'
 
 export const useCounterStore = defineStore('counter', () => {
   const store = {
@@ -73,7 +73,7 @@ Full guide and API reference in [`docs/`](./docs). Serve locally with `pnpm docs
 - [Defining stores](./docs/guide/defining-stores.md) (class vs closure)
 - [Selective subscriptions](./docs/guide/selective-subscriptions.md)
 - [Cross-framework sharing](./docs/guide/cross-framework.md)
-- [`@bocal/core`](./docs/api/core.md) / [`@bocal/react`](./docs/api/react.md) / [`@bocal/vue`](./docs/api/vue.md)
+- [`@byrding/core`](./docs/api/core.md) / [`@byrding/react`](./docs/api/react.md) / [`@byrding/vue`](./docs/api/vue.md)
 
 ## License
 

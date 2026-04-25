@@ -1,5 +1,5 @@
 {
-  "name": "@bocal/render-demo",
+  "name": "@byrding/render-demo",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -9,8 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@bocal/core": "workspace:*",
-    "@bocal/react": "workspace:*",
+    "@byrding/core": "workspace:*",
+    "@byrding/react": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

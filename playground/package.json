@@ -1,13 +1,13 @@
 {
-  "name": "@bocal/playground",
+  "name": "@byrding/playground",
   "version": "0.0.1",
   "description": "Cross-framework smoke test — CartStore shared by React and Vue",
   "private": true,
   "type": "module",
   "dependencies": {
-    "@bocal/core": "workspace:*",
-    "@bocal/react": "workspace:*",
-    "@bocal/vue": "workspace:*",
+    "@byrding/core": "workspace:*",
+    "@byrding/react": "workspace:*",
+    "@byrding/vue": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "vue": "^3.4.0"

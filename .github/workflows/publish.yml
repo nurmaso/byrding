@@ -25,7 +25,7 @@ concurrency:
 #
 # JSR uses OIDC — no secret needed. The package must be linked to this
 # GitHub repository on jsr.io:
-#   → jsr.io/@bocal/<package> → Settings → GitHub Actions Publishing → Enable
+#   → jsr.io/@byrding/<package> → Settings → GitHub Actions Publishing → Enable
 #
 # Each step publishes from the package directory that contains jsr.json.
 # --allow-dirty skips the git-clean check (pnpm install creates node_modules
@@ -83,14 +83,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Publish @bocal/core to JSR
+      - name: Publish @byrding/core to JSR
         run: npx jsr publish --allow-dirty
         working-directory: packages/core
 
-      - name: Publish @bocal/react to JSR
+      - name: Publish @byrding/react to JSR
         run: npx jsr publish --allow-dirty
         working-directory: packages/react
 
-      - name: Publish @bocal/vue to JSR
+      - name: Publish @byrding/vue to JSR
         run: npx jsr publish --allow-dirty
         working-directory: packages/vue

@@ -1,13 +1,13 @@
 # Getting started
 
-`bocal` is a monorepo with three published packages and two demo apps:
+`byrding` is a monorepo with three published packages and two demo apps:
 
 ```
-bocal/
+byrding/
 ├── packages/
-│   ├── core/                  @bocal/core — framework-agnostic reactivity
-│   ├── react/                 @bocal/react — useStore hook via useSyncExternalStore
-│   └── vue/                   @bocal/vue — composable via shallowReactive
+│   ├── core/                  @byrding/core — framework-agnostic reactivity
+│   ├── react/                 @byrding/react — useStore hook via useSyncExternalStore
+│   └── vue/                   @byrding/vue — composable via shallowReactive
 ├── playground/                cross-framework code sample (React + Vue share one CartStore)
 ├── render-demo/               re-render visualiser (React)
 └── docs/                      this documentation (VitePress)
@@ -17,26 +17,26 @@ bocal/
 
 ```bash
 # React project
-npm install @bocal/react
+npm install @byrding/react
 
 # Vue project
-npm install @bocal/vue
+npm install @byrding/vue
 
 # Vanilla JS / custom adapter
-npm install @bocal/core
+npm install @byrding/core
 ```
 
 ## Install from JSR
 
 ```bash
 # React project
-npx jsr add @bocal/react
+npx jsr add @byrding/react
 
 # Vue project
-npx jsr add @bocal/vue
+npx jsr add @byrding/vue
 
 # Vanilla JS / custom adapter
-npx jsr add @bocal/core
+npx jsr add @byrding/core
 ```
 
 > JSR takes TypeScript source directly — no compilation step needed for JSR consumers.
@@ -47,7 +47,7 @@ The repo uses [pnpm workspaces](https://pnpm.io/workspaces). Clone it and instal
 
 ```bash
 git clone https://github.com/nurmaso/bocal.git
-cd bocal
+cd byrding
 pnpm install
 ```
 
@@ -69,7 +69,7 @@ pnpm docs:build        # static build into docs/.vitepress/dist
 ## The 30-second model
 
 1. Define a store once — as a class or as a closure factory.
-2. Wrap it with `defineStore(id, definition)` from either `@bocal/react` or `@bocal/vue`. You get back a hook or composable.
+2. Wrap it with `defineStore(id, definition)` from either `@byrding/react` or `@byrding/vue`. You get back a hook or composable.
 3. Call the hook with an optional `keyPaths` array to subscribe only to the keys you care about. Default is `['*']` (subscribe to everything).
 4. Read state with `store.foo`, call actions with `store.doSomething()`. Writes (`store.foo = x` or `this.foo = x` inside an action) trigger re-renders on subscribed components only.
 
@@ -77,7 +77,7 @@ pnpm docs:build        # static build into docs/.vitepress/dist
 
 ```ts
 // stores/counter.ts
-import { defineStore } from '@bocal/react'
+import { defineStore } from '@byrding/react'
 
 export const useCounterStore = defineStore('counter', () => {
   const store = {
@@ -117,8 +117,8 @@ git push --tags
 ```
 
 > **Prerequisite** — set up once:
-> 1. Claim `@bocal` org on [npmjs.com](https://www.npmjs.com/org/create) and [jsr.io](https://jsr.io/new).
+> 1. Claim `@byrding` org on [npmjs.com](https://www.npmjs.com/org/create) and [jsr.io](https://jsr.io/new).
 > 2. Add `NPM_TOKEN` secret to GitHub repo → Settings → Secrets → Actions.
-> 3. Enable GitHub Actions publishing on jsr.io for each package (`@bocal/core`, `@bocal/react`, `@bocal/vue`).
+> 3. Enable GitHub Actions publishing on jsr.io for each package (`@byrding/core`, `@byrding/react`, `@byrding/vue`).
 
 Next: [Defining stores](./defining-stores) walks through the two definition styles and their tradeoffs.

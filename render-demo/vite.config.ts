@@ -6,7 +6,7 @@ export default defineConfig({
   server: { port: 5174 },
   optimizeDeps: {
     // Pre-bundle workspace TypeScript packages so Vite handles them correctly
-    include: ['@bocal/core', '@bocal/react'],
+    include: ['@byrding/core', '@byrding/react'],
     esbuildOptions: {
       // Workspace packages expose raw .ts source — esbuild handles these
       loader: { '.ts': 'ts' },

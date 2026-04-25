@@ -1,4 +1,4 @@
-import { defineStore } from '@bocal/react'
+import { defineStore } from '@byrding/react'
 
 /**
  * Demo store with three independent state slices.
