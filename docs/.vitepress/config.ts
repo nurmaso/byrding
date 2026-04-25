@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  title: 'bocal',
+  title: 'byrding',
   description:
     'A tiny reactive store with a vanilla-JS core and thin React + Vue adapters.',
   cleanUrls: true,
@@ -37,9 +37,9 @@ export default defineConfig({
         {
           text: 'API reference',
           items: [
-            { text: '@bocal/core', link: '/api/core' },
-            { text: '@bocal/react', link: '/api/react' },
-            { text: '@bocal/vue', link: '/api/vue' },
+            { text: '@byrding/core', link: '/api/core' },
+            { text: '@byrding/react', link: '/api/react' },
+            { text: '@byrding/vue', link: '/api/vue' },
           ],
         },
       ],

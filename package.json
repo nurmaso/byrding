@@ -1,13 +1,13 @@
 {
-  "name": "bocal-monorepo",
+  "name": "byrding-monorepo",
   "private": true,
   "version": "0.0.3",
   "scripts": {
     "build": "pnpm -r --filter \"./packages/*\" build",
-    "dev:render-demo": "pnpm --filter @bocal/render-demo dev",
-    "docs:dev": "pnpm --filter @bocal/docs dev",
-    "docs:build": "pnpm --filter @bocal/docs build",
-    "docs:preview": "pnpm --filter @bocal/docs preview"
+    "dev:render-demo": "pnpm --filter @byrding/render-demo dev",
+    "docs:dev": "pnpm --filter @byrding/docs dev",
+    "docs:build": "pnpm --filter @byrding/docs build",
+    "docs:preview": "pnpm --filter @byrding/docs preview"
   },
   "devDependencies": {
     "typescript": "^5.0.2"

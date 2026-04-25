@@ -1,0 +1,96 @@
+name: Publish
+
+# Triggers on any vX.Y.Z tag push (e.g. git tag v0.1.0 && git push --tags).
+# Can also be run manually from the Actions tab for testing.
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+# ── npm publishing ─────────────────────────────────────────────────────────────
+#
+# Requires a repository secret: NPM_TOKEN
+#   → npm → Access Tokens → Generate New Token (Automation)
+#   → GitHub repo → Settings → Secrets → Actions → NPM_TOKEN
+#
+# publishConfig.provenance: true (in each package.json) attaches a signed
+# SLSA provenance statement linking the published package to this exact
+# commit + workflow run.
+#
+# ── JSR publishing ────────────────────────────────────────────────────────────
+#
+# JSR uses OIDC — no secret needed. The package must be linked to this
+# GitHub repository on jsr.io:
+#   → jsr.io/@byrding/<package> → Settings → GitHub Actions Publishing → Enable
+#
+# Each step publishes from the package directory that contains jsr.json.
+# --allow-dirty skips the git-clean check (pnpm install creates node_modules
+# which is gitignored but may show up as "dirty" in some environments).
+
+jobs:
+  publish-npm:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # required for --provenance
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Publish to npm
+        run: pnpm -r --filter "./packages/*" publish --access public --no-git-checks --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-jsr:
+    name: Publish to JSR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # required for JSR OIDC
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Publish @byrding/core to JSR
+        run: npx jsr publish --allow-dirty
+        working-directory: packages/core
+
+      - name: Publish @byrding/react to JSR
+        run: npx jsr publish --allow-dirty
+        working-directory: packages/react
+
+      - name: Publish @byrding/vue to JSR
+        run: npx jsr publish --allow-dirty
+        working-directory: packages/vue

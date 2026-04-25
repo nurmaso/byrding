@@ -1,4 +1,4 @@
-# `@bocal/react`
+# `@byrding/react`
 
 React adapter. Turns a store definition into a React hook.
 
@@ -15,7 +15,7 @@ Returns a hook. The hook can be called inside any React component.
 
 ```ts
 // stores/counter.ts
-import { defineStore } from '@bocal/react'
+import { defineStore } from '@byrding/react'
 
 export const useCounterStore = defineStore('counter', () => {
   const store = {
@@ -62,7 +62,7 @@ useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
 ## Component ID
 
-Each component instance is assigned a stable `componentId` (`bocal_NN`) on first render, stored in a `useRef`. This is what the core's subscription map uses to route notifications. You never see it.
+Each component instance is assigned a stable `componentId` (`byrding_NN`) on first render, stored in a `useRef`. This is what the core's subscription map uses to route notifications. You never see it.
 
 ## Typing
 

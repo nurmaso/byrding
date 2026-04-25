@@ -1,6 +1,6 @@
 <template>
   <div style="font-family: monospace; padding: 1rem; border: 1px solid #ccc">
-    <h2>@bocal/vue — Cart (class style)</h2>
+    <h2>@byrding/vue — Cart (class style)</h2>
 
     <p>Items in cart: {{ store.totalItems }}</p>
     <p>Subtotal: ${{ store.subtotal.toFixed(2) }}</p>

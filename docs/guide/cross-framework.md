@@ -1,10 +1,10 @@
 # Cross-framework sharing
 
-Because the reactivity engine lives in `@bocal/core`, a single store instance can back components in multiple frameworks at the same time. Mutate from a React button, a Vue component subscribed to that key re-renders — and vice versa.
+Because the reactivity engine lives in `@byrding/core`, a single store instance can back components in multiple frameworks at the same time. Mutate from a React button, a Vue component subscribed to that key re-renders — and vice versa.
 
 ## How it works
 
-1. `@bocal/core` keeps a module-level `storeRegistry` keyed by the store's `id` string.
+1. `@byrding/core` keeps a module-level `storeRegistry` keyed by the store's `id` string.
 2. `defineStore(id, definition)` in either adapter calls `createStore(id, definition)` on the core. The core returns the existing singleton if `id` is already registered, otherwise it instantiates.
 3. Each adapter wires its own framework reactivity on top of the shared singleton:
    - React: `useSyncExternalStore` driven by the core's subscribe/notify.
@@ -41,7 +41,7 @@ export class CartStore {
 
 ```ts
 // react-app/useCartStore.ts
-import { defineStore } from '@bocal/react'
+import { defineStore } from '@byrding/react'
 import { cartId, CartStore } from '../shared/cart.store'
 
 export const useCartStore = defineStore(cartId, CartStore)
@@ -49,7 +49,7 @@ export const useCartStore = defineStore(cartId, CartStore)
 
 ```ts
 // vue-app/useCartStore.ts
-import { defineStore } from '@bocal/vue'
+import { defineStore } from '@byrding/vue'
 import { cartId, CartStore } from '../shared/cart.store'
 
 export const useCartStore = defineStore(cartId, CartStore)

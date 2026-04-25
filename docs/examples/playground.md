@@ -11,10 +11,10 @@ playground/
 ├── shared/
 │   └── cart.store.ts        ← CartStore class + cartDefinition factory + cartId
 ├── react-app/
-│   ├── useCartStore.ts      ← defineStore(cartId, CartStore) from @bocal/react
+│   ├── useCartStore.ts      ← defineStore(cartId, CartStore) from @byrding/react
 │   └── Cart.tsx
 └── vue-app/
-    ├── useCartStore.ts      ← defineStore(cartId, CartStore) from @bocal/vue
+    ├── useCartStore.ts      ← defineStore(cartId, CartStore) from @byrding/vue
     ├── Cart.vue
     └── CartSummary.vue
 ```
@@ -25,21 +25,21 @@ The `shared/` folder exports both the store `id` (`cartId`) and the definition (
 
 ```ts
 // react-app/useCartStore.ts
-import { defineStore } from '@bocal/react'
+import { defineStore } from '@byrding/react'
 import { cartId, CartStore } from '../shared/cart.store'
 export const useCartStore = defineStore(cartId, CartStore)
 ```
 
 ```ts
 // vue-app/useCartStore.ts
-import { defineStore } from '@bocal/vue'
+import { defineStore } from '@byrding/vue'
 import { cartId, CartStore } from '../shared/cart.store'
 export const useCartStore = defineStore(cartId, CartStore)
 ```
 
-Because both `defineStore` calls route through `@bocal/core`'s `storeRegistry`, the second call finds the existing singleton and wraps it in a Vue composable. **First registration wins** — it does not matter whether React or Vue starts first.
+Because both `defineStore` calls route through `@byrding/core`'s `storeRegistry`, the second call finds the existing singleton and wraps it in a Vue composable. **First registration wins** — it does not matter whether React or Vue starts first.
 
 ## See also
 
 - [Cross-framework sharing](/guide/cross-framework) — the rules and gotchas.
-- [`@bocal/core`](/api/core) — the registry that makes this work.
+- [`@byrding/core`](/api/core) — the registry that makes this work.

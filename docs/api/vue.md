@@ -1,4 +1,4 @@
-# `@bocal/vue`
+# `@byrding/vue`
 
 Vue 3 adapter. Turns a store definition into a composable.
 
@@ -15,7 +15,7 @@ Returns a composable callable from any `setup()`.
 
 ```ts
 // stores/counter.ts
-import { defineStore } from '@bocal/vue'
+import { defineStore } from '@byrding/vue'
 
 export const useCounterStore = defineStore('counter', () => {
   const store = {

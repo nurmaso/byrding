@@ -1,7 +1,7 @@
 /**
  * types.ts
  *
- * Shared TypeScript types for @bocal/core.
+ * Shared TypeScript types for @byrding/core.
  *
  * `StoreInstance` is the internal representation of a registered store.
  * Framework adapters consume only `CoreStore<T>` — the public surface that
@@ -59,11 +59,11 @@ export interface StoreInstance {
 // ─── Framework-adapter surface ───────────────────────────────────────────────
 
 /**
- * What `createStore` returns. Framework adapters (`@bocal/react`,
- * `@bocal/vue`) consume this interface and never import `StoreInstance`
+ * What `createStore` returns. Framework adapters (`@byrding/react`,
+ * `@byrding/vue`) consume this interface and never import `StoreInstance`
  * directly.
  *
- * App developers never import from `@bocal/core` — they use the framework
+ * App developers never import from `@byrding/core` — they use the framework
  * package's `defineStore` exclusively.
  */
 export interface CoreStore<T> {

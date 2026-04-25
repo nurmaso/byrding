@@ -45,7 +45,7 @@ let _idCounter = 0
 
 /** Generate a unique opaque ID for each component subscriber. */
 export function generateComponentId(): string {
-  return `bocal_${++_idCounter}`
+  return `byrding_${++_idCounter}`
 }
 
 // ─── Merged store object ─────────────────────────────────────────────────────

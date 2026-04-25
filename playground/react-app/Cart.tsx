@@ -17,7 +17,7 @@ export function Cart() {
 
   return (
     <div style={{ fontFamily: 'monospace', padding: '1rem', border: '1px solid #ccc' }}>
-      <h2>@bocal/react — Cart (class style)</h2>
+      <h2>@byrding/react — Cart (class style)</h2>
 
       <p>Items in cart: {store.totalItems}</p>
       <p>Subtotal: ${store.subtotal.toFixed(2)}</p>

@@ -11,7 +11,7 @@ Both styles produce the same flat API at consumption time. Pick whichever fits y
 
 ```ts
 // stores/counter.ts
-import { defineStore } from '@bocal/react'
+import { defineStore } from '@byrding/react'
 
 class CounterStore {
   count = 0
@@ -35,7 +35,7 @@ Under the hood: the core builds a `Proxy` over a plain copy of the instance's st
 
 ```ts
 // stores/counter.ts
-import { defineStore } from '@bocal/react'
+import { defineStore } from '@byrding/react'
 
 export const useCounterStore = defineStore('counter', () => {
   const store = {
@@ -73,7 +73,7 @@ At registration time the core classifies each property on the instance:
 - **Computed** — any getter (`get foo()`).
 - **Action** — any function-valued property (including prototype methods for classes).
 
-Computed values are re-evaluated on every read. They are not cached — bocal relies on the subscription system to limit re-renders instead.
+Computed values are re-evaluated on every read. They are not cached — byrding relies on the subscription system to limit re-renders instead.
 
 ## Consuming
 

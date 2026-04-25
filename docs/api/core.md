@@ -1,6 +1,6 @@
-# `@bocal/core`
+# `@byrding/core`
 
-Framework-agnostic reactivity engine. App code does not call this package directly — it's the substrate for `@bocal/react` and `@bocal/vue`. Use this reference if you're writing a new adapter or debugging.
+Framework-agnostic reactivity engine. App code does not call this package directly — it's the substrate for `@byrding/react` and `@byrding/vue`. Use this reference if you're writing a new adapter or debugging.
 
 ## `createStore(id, definition)`
 
@@ -47,7 +47,7 @@ Actions, getters, and state fields are then all bound/exposed on the flat merged
 function generateComponentId(): string
 ```
 
-Returns `bocal_1`, `bocal_2`, … — a process-unique opaque ID. Used by adapters to distinguish subscribers in the `subscribe`/`notify` map.
+Returns `byrding_1`, `byrding_2`, … — a process-unique opaque ID. Used by adapters to distinguish subscribers in the `subscribe`/`notify` map.
 
 ## `subscribe(store, componentId, keyPaths, callback)`
 

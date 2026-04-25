@@ -29,7 +29,7 @@ importers:
 
   packages/react:
     dependencies:
-      '@bocal/core':
+      '@byrding/core':
         specifier: workspace:*
         version: link:../core
       react:
@@ -45,7 +45,7 @@ importers:
 
   packages/vue:
     dependencies:
-      '@bocal/core':
+      '@byrding/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -58,13 +58,13 @@ importers:
 
   playground:
     dependencies:
-      '@bocal/core':
+      '@byrding/core':
         specifier: workspace:*
         version: link:../packages/core
-      '@bocal/react':
+      '@byrding/react':
         specifier: workspace:*
         version: link:../packages/react
-      '@bocal/vue':
+      '@byrding/vue':
         specifier: workspace:*
         version: link:../packages/vue
       react:
@@ -89,10 +89,10 @@ importers:
 
   render-demo:
     dependencies:
-      '@bocal/core':
+      '@byrding/core':
         specifier: workspace:*
         version: link:../packages/core
-      '@bocal/react':
+      '@byrding/react':
         specifier: workspace:*
         version: link:../packages/react
       react:

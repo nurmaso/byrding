@@ -1,11 +1,11 @@
 /**
- * @bocal/vue — defineStore
+ * @byrding/vue — defineStore
  *
  * Returns a Vue 3 composable from a store definition.
  *
  * ```ts
  * // stores/counter.ts
- * import { defineStore } from '@bocal/vue'
+ * import { defineStore } from '@byrding/vue'
  *
  * export const useCounterStore = defineStore('counter', () => {
  *   const store = {
@@ -51,7 +51,7 @@
  */
 
 import { shallowReactive, onUnmounted, getCurrentInstance } from 'vue'
-import { createStore, generateComponentId } from '@bocal/core'
+import { createStore, generateComponentId } from '@byrding/core'
 
 export function defineStore<T extends Record<string, unknown>>(
   id: string,

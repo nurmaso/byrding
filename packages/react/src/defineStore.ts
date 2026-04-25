@@ -1,12 +1,12 @@
 /**
- * @bocal/react — defineStore
+ * @byrding/react — defineStore
  *
  * Returns a React hook from a store definition.  The hook is what developers
  * export from their store files and call inside components.
  *
  * ```ts
  * // stores/counter.ts
- * import { defineStore } from '@bocal/react'
+ * import { defineStore } from '@byrding/react'
  *
  * export const useCounterStore = defineStore('counter', () => {
  *   const store = {
@@ -52,7 +52,7 @@
 
 import { useRef } from 'react'
 import { useSyncExternalStore } from 'react'
-import { createStore, generateComponentId } from '@bocal/core'
+import { createStore, generateComponentId } from '@byrding/core'
 
 export function defineStore<T extends Record<string, unknown>>(
   id: string,
