@@ -1,3 +1,6 @@
+# Generated per-package READMEs (sourced from docs/api/)
+packages/*/README.md
+
 # Logs
 logs
 *.log
