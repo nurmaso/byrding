@@ -25,9 +25,9 @@ Three publishable packages in a pnpm monorepo:
 
 Load these before starting any implementation work:
 
-- **Architecture + implementation contract:** `docs/byrding-refactor-agent-guidance.md`
+- **Architecture + implementation contract:** `.claude/docs/byrding-refactor-agent-guidance.md`
   — Full source code, type contracts, test requirements, and implementation order. This is the ground truth.
-- **Project overview:** `docs/small-scope-projects-overview.md`
+- **Project overview:** `.claude/docs/small-scope-projects-overview.md`
   — Sprint methodology, backlog, and P0 scope boundaries.
 
 ---
@@ -37,9 +37,10 @@ Load these before starting any implementation work:
 ```
 byrding/
 ├── CLAUDE.md
-├── docs/
-│   ├── byrding-refactor-agent-guidance.md   ← read this
-│   └── small-scope-projects-overview.md
+├── .claude/
+│   └── docs/
+│       ├── byrding-refactor-agent-guidance.md   ← read this
+│       └── small-scope-projects-overview.md
 ├── packages/
 │   ├── core/        # @byrding/core
 │   ├── react/       # @byrding/react
@@ -81,7 +82,7 @@ Execute in this exact sequence. **Do not proceed to the next step until all test
 7. Implement `@byrding/vue` `defineStore` — `@vue/test-utils`: composable returned, action updates template, both definition styles
 8. Cross-framework smoke test in `playground/` — shared store mutated in React re-renders Vue component and vice versa
 
-Full source code and test requirements for each step are in `docs/byrding-refactor-agent-guidance.md`.
+Full source code and test requirements for each step are in `.claude/docs/byrding-refactor-agent-guidance.md`.
 
 ---
 
