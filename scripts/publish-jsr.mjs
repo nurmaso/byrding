@@ -1,44 +1,50 @@
 #!/usr/bin/env node
 /**
- * Publishes to JSR only the packages that changesets just published to npm.
+ * Publishes each package to JSR if its current version is not yet there.
  *
- * Reads PUBLISHED env var — the JSON array from changesets/action@v1's
- * `publishedPackages` output, e.g. [{"name":"@byrding/core","version":"0.1.0"}].
+ * Checks the JSR registry directly rather than relying on whether npm just
+ * published — this means JSR publishes correctly even when npm was skipped
+ * (e.g. version already on npm from a prior run).
  *
- * Before each JSR publish it syncs the version in jsr.json from package.json,
+ * Before each publish it syncs the version in jsr.json from package.json,
  * since changesets bumps package.json but not jsr.json.
  */
 import { execSync } from 'child_process'
 import { readFileSync, writeFileSync } from 'fs'
-import { join } from 'path'
+import { fileURLToPath } from 'url'
+import { join, dirname } from 'path'
 
-const published = JSON.parse(process.env.PUBLISHED ?? '[]')
-if (published.length === 0) {
-  console.log('PUBLISHED is empty — nothing to publish to JSR.')
-  process.exit(0)
-}
-
+const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const packages = ['core', 'react', 'vue']
-const root = new URL('..', import.meta.url).pathname
+
+async function existsOnJsr(scope, pkg, version) {
+  try {
+    const res = await fetch(`https://jsr.io/@${scope}/${pkg}/${version}_meta.json`)
+    return res.status === 200
+  } catch {
+    return false
+  }
+}
 
 for (const pkg of packages) {
   const name = `@byrding/${pkg}`
-  if (!published.find((p) => p.name === name)) {
-    console.log(`Skipping ${name} — not in this release.`)
-    continue
-  }
-
   const pkgDir = join(root, 'packages', pkg)
   const pkgJsonPath = join(pkgDir, 'package.json')
   const jsrJsonPath = join(pkgDir, 'jsr.json')
 
   const pkgJson = JSON.parse(readFileSync(pkgJsonPath, 'utf8'))
+  const { version } = pkgJson
+
+  if (await existsOnJsr('byrding', pkg, version)) {
+    console.log(`Skipping ${name}@${version} — already on JSR.`)
+    continue
+  }
+
   const jsrJson = JSON.parse(readFileSync(jsrJsonPath, 'utf8'))
-
-  jsrJson.version = pkgJson.version
+  jsrJson.version = version
   writeFileSync(jsrJsonPath, JSON.stringify(jsrJson, null, 2) + '\n')
-  console.log(`Synced ${name} jsr.json → ${pkgJson.version}`)
+  console.log(`Synced ${name} jsr.json → ${version}`)
 
-  console.log(`Publishing ${name}@${pkgJson.version} to JSR…`)
+  console.log(`Publishing ${name}@${version} to JSR…`)
   execSync('npx jsr publish --allow-dirty --allow-slow-types', { cwd: pkgDir, stdio: 'inherit' })
 }
