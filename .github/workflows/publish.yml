@@ -79,8 +79,6 @@ jobs:
       - name: Build packages
         run: pnpm build
 
-      - name: Generate READMEs from docs
-        run: node scripts/generate-readmes.mjs
 
       - name: Create Version PR or publish to npm
         id: changesets
@@ -123,8 +121,6 @@ jobs:
       - name: Build packages
         run: pnpm build
 
-      - name: Generate READMEs from docs
-        run: node scripts/generate-readmes.mjs
 
       # Publishes only the packages changesets bumped; syncs jsr.json versions
       - name: Publish to JSR
