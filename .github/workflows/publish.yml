@@ -92,11 +92,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-  # ── Job 2: publish to JSR (only when npm publish happened) ──────────────────
+  # ── Job 2: publish to JSR ────────────────────────────────────────────────────
+  # Runs whenever publish-npm succeeds — even if npm was skipped (version already
+  # on registry). The script checks the JSR registry directly and publishes any
+  # version not yet there, so npm and JSR can never drift out of sync.
   publish-jsr:
     name: Publish to JSR
     needs: publish-npm
-    if: needs.publish-npm.outputs.published == 'true'
+    if: needs.publish-npm.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -122,8 +125,6 @@ jobs:
         run: pnpm build
 
 
-      # Publishes only the packages changesets bumped; syncs jsr.json versions
+      # Checks JSR registry per-package and publishes any version not yet there
       - name: Publish to JSR
         run: node scripts/publish-jsr.mjs
-        env:
-          PUBLISHED: ${{ needs.publish-npm.outputs.publishedPackages }}
