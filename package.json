@@ -10,6 +10,7 @@
     "docs:preview": "pnpm --filter @byrding/docs preview"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.27.0",
     "typescript": "^5.0.2"
   },
   "packageManager": "pnpm@9.0.0"
