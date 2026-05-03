@@ -18,79 +18,121 @@
  * })
  * ```
  *
- * ```tsx
- * // AComponent.tsx — direct access
- * const store = useCounterStore()
- * store.count       // state
- * store.double      // computed
- * store.increment() // action
+ * ## Devtools integration
  *
- * // BComponent.tsx — destructuring
- * const { count, double, increment } = useCounterStore()
- *
- * // Selective subscription — only re-renders when `count` changes
- * const store = useCounterStore(['count'])
- * ```
- *
- * ## Cross-framework sharing
- *
- * Export the ID and definition from a shared file and import into each
- * framework's `defineStore`.  The core registry ensures the store is only
- * initialised once.
- *
- * ## Implementation notes
- *
- * `useSyncExternalStore` requires a **stable** `subscribe` reference — a new
- * function on every render causes an infinite loop.  We stabilise it via
- * `useRef`.  The `componentId` is also kept stable across re-renders.
- *
- * `getSnapshot` returns a cached shallow copy of raw state; the cache is
- * invalidated on each mutation so React sees a new reference and schedules a
- * re-render.  The component then reads actual values from `coreStore.store`
- * (the live merged object with getters) after the re-render.
+ * In development, the hook automatically infers the calling component's name
+ * from the call stack (PascalCase function name or file name).  Render counts
+ * and component lifecycle events are emitted to `window.__BYRDING_DEVTOOLS__`
+ * with zero configuration required from the developer.
  */
 
 import { useRef } from 'react'
 import { useSyncExternalStore } from 'react'
-import { createStore, generateComponentId } from '@byrding/core'
+import { createStore, generateComponentId, getDevtoolsHook } from '@byrding/core'
+
+// ─── Component name inference ─────────────────────────────────────────────────
+
+/**
+ * Parses the call stack captured at `useStore` call time to find the first
+ * PascalCase function name or PascalCase file name — that's the React component.
+ * Only runs in development; returns `undefined` in production.
+ */
+function inferComponentName(): string | undefined {
+  if (process.env.NODE_ENV === 'production') return undefined
+  try {
+    const lines = new Error().stack?.split('\n') ?? []
+    // lines[0] = 'Error'
+    // lines[1] = inferComponentName
+    // lines[2] = useStore (our hook body)
+    // lines[3+] = React internals or the calling component
+    for (let i = 3; i < Math.min(lines.length, 12); i++) {
+      const line = lines[i]
+      const nameMatch = line.match(/at (\w+)[\s(]/)
+      if (nameMatch?.[1] && /^[A-Z]/.test(nameMatch[1])) return nameMatch[1]
+      const fileMatch = line.match(/\/([A-Z][^/]*?)\.[jt]sx?[):,]/)
+      if (fileMatch?.[1]) return fileMatch[1]
+    }
+  } catch {
+    // stack parsing is best-effort
+  }
+  return undefined
+}
+
+// ─── defineStore ─────────────────────────────────────────────────────────────
 
 export function defineStore<T extends Record<string, unknown>>(
   id: string,
   definition: (new () => T) | (() => T),
 ) {
-  // Register with core once at module load time.
-  // createStore is idempotent for the same id — safe to call multiple times.
   const coreStore = createStore<T>(id, definition)
 
-  /** The hook returned to the developer. */
   return function useStore(keyPaths: string[] = ['*']): T {
-    // Stable component ID — generated only on the first render.
     const componentIdRef = useRef<string | null>(null)
     if (!componentIdRef.current) {
       componentIdRef.current = generateComponentId()
     }
     const componentId = componentIdRef.current
 
+    // Infer component name once on first render.
+    const componentNameRef = useRef<string | undefined>(undefined)
+    if (!componentNameRef.current) {
+      componentNameRef.current = inferComponentName() ?? componentId
+    }
+    const componentName = componentNameRef.current
+
+    const renderCountRef = useRef(0)
+    const mountedRef = useRef(false)
+
     // subscribe must be referentially stable across renders.
-    // A new function identity on every render causes useSyncExternalStore to
-    // re-subscribe on every render → infinite loop.
     const subscribeRef = useRef((onStoreChange: () => void) => {
-      return coreStore.subscribe(componentId, keyPaths, onStoreChange)
+      const hook = getDevtoolsHook()
+
+      // Emit component:mounted on first subscription.
+      if (!mountedRef.current) {
+        mountedRef.current = true
+        hook?.emit({
+          type: 'component:mounted',
+          componentId,
+          name: componentName,
+          framework: 'react',
+          storeId: id,
+          keyPaths,
+          timestamp: Date.now(),
+        })
+      }
+
+      const trackedCallback = () => {
+        renderCountRef.current++
+        hook?.emit({
+          type: 'component:rendered',
+          componentId,
+          name: componentName,
+          storeId: id,
+          renderCount: renderCountRef.current,
+          timestamp: Date.now(),
+        })
+        onStoreChange()
+      }
+
+      const unsubscribe = coreStore.subscribe(componentId, keyPaths, trackedCallback)
+
+      return () => {
+        unsubscribe()
+        getDevtoolsHook()?.emit({
+          type: 'component:unmounted',
+          componentId,
+          storeId: id,
+          timestamp: Date.now(),
+        })
+      }
     })
 
-    // useSyncExternalStore drives re-renders.
-    //   - subscribe:    called once to register; returns unsubscribe fn.
-    //   - getSnapshot:  returns a cached object; changes reference on mutation.
-    // The snapshot is raw state only.  Computed values are re-evaluated from
-    // the merged store's getters after each re-render.
     useSyncExternalStore(
       subscribeRef.current,
       coreStore.getSnapshot,
       coreStore.getSnapshot,
     )
 
-    // Return the live flat merged store object — reads go through getters
-    // which always return the current value.
     return coreStore.store
   }
 }

@@ -17,73 +17,75 @@
  * })
  * ```
  *
- * ```vue
- * <!-- AComponent.vue -->
- * <script setup lang="ts">
- * import { useCounterStore } from '@/stores/counter'
- * const store = useCounterStore()
- * </script>
- * <template>
- *   <p>{{ store.count }}</p>
- *   <p>{{ store.double }}</p>
- *   <button @click="store.increment()">+</button>
- * </template>
- * ```
+ * ## Devtools integration
  *
- * ## Reactivity model
- *
- * The composable returns a Vue `shallowReactive` object.  Vue's template
- * system tracks reads of its top-level properties.  When the Bocal core
- * notifies a change (including from a React component mutating the same
- * shared store), we call `Object.assign(reactiveStore, coreStore.store)`
- * which copies the latest state + computed values into the reactive object.
- * Vue detects the changed properties and re-renders subscribed components.
- *
- * Action references stay stable (same function reference on every sync),
- * so Vue does not needlessly trigger re-renders for action-key reads.
- *
- * ## Lifecycle
- *
- * When called inside a component `setup()`, `onUnmounted` tears down the
- * Bocal subscription.  When called outside a component context (e.g. in a
- * Pinia-style store module), the `getCurrentInstance()` guard prevents the
- * lifecycle call from throwing.
+ * In development, the composable reads the component name from Vue's
+ * `getCurrentInstance()` — no configuration needed.  Render counts and
+ * component lifecycle events are emitted to `window.__BYRDING_DEVTOOLS__`
+ * automatically.
  */
 
 import { shallowReactive, onUnmounted, getCurrentInstance } from 'vue'
-import { createStore, generateComponentId } from '@byrding/core'
+import { createStore, generateComponentId, getDevtoolsHook } from '@byrding/core'
+
+// ─── defineStore ─────────────────────────────────────────────────────────────
 
 export function defineStore<T extends Record<string, unknown>>(
   id: string,
   definition: (new () => T) | (() => T),
 ) {
-  // Idempotent — same id always returns the same singleton.
   const coreStore = createStore<T>(id, definition)
 
-  /** The composable returned to the developer. */
   return function useStore(keyPaths: string[] = ['*']): T {
     const componentId = generateComponentId()
+    const hook = getDevtoolsHook()
 
-    // Build the initial snapshot by spreading the merged store.
-    // Object.assign / spread invokes each getter on coreStore.store, so the
-    // resulting plain object holds current state values, current computed
-    // values, and action function references.
+    // Vue exposes the component name reliably via getCurrentInstance.
+    const instance = getCurrentInstance()
+    const componentName =
+      instance?.type?.__name ??
+      (instance?.type as { name?: string })?.name ??
+      componentId
+
+    let renderCount = 0
+
     const reactiveStore = shallowReactive({ ...coreStore.store }) as T
 
-    // Sync function — called on every Bocal notification.
-    // Object.assign re-reads all getters from coreStore.store (current values)
-    // and assigns them to the shallowReactive wrapper.
-    // Vue detects changed properties and queues a re-render for any component
-    // template that read those properties — including cross-framework
-    // mutations originating from React components.
     const syncStore = () => {
+      renderCount++
+      hook?.emit({
+        type: 'component:rendered',
+        componentId,
+        name: componentName,
+        storeId: id,
+        renderCount,
+        timestamp: Date.now(),
+      })
       Object.assign(reactiveStore as Record<string, unknown>, coreStore.store)
     }
 
     const unsubscribe = coreStore.subscribe(componentId, keyPaths, syncStore)
 
-    if (getCurrentInstance()) {
-      onUnmounted(unsubscribe)
+    hook?.emit({
+      type: 'component:mounted',
+      componentId,
+      name: componentName,
+      framework: 'vue',
+      storeId: id,
+      keyPaths,
+      timestamp: Date.now(),
+    })
+
+    if (instance) {
+      onUnmounted(() => {
+        unsubscribe()
+        hook?.emit({
+          type: 'component:unmounted',
+          componentId,
+          storeId: id,
+          timestamp: Date.now(),
+        })
+      })
     }
 
     return reactiveStore
