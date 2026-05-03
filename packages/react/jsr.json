@@ -5,7 +5,8 @@
     ".": "./src/index.ts"
   },
   "imports": {
-    "@byrding/core": "jsr:@byrding/core@^0.0.1"
+    "@byrding/core": "jsr:@byrding/core@^0.0.1",
+    "react": "npm:react@^18.0.0"
   },
   "publish": {
     "include": ["src/", "LICENSE", "README.md"],
