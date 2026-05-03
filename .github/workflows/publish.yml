@@ -1,45 +1,65 @@
-name: Publish
+name: Release
 
-# Triggers on any vX.Y.Z tag push (e.g. git tag v0.1.0 && git push --tags).
-# Can also be run manually from the Actions tab for testing.
+# Every push to main runs this workflow. Changesets decides what happens:
+#   - Uncommitted changesets exist  → bot opens/updates a "Version Packages" PR
+#   - "Version Packages" PR merged  → packages are published to npm and JSR
+#
+# ── Manual setup (one-time, before first publish) ─────────────────────────────
+#
+# npm
+#   1. Create an Automation token at npmjs.com (Account → Access Tokens).
+#   2. Add it as a repository secret: Settings → Secrets → Actions → NPM_TOKEN.
+#   3. Ensure the @byrding scope exists on npm (create an org if needed).
+#
+# JSR  (no token needed — uses OIDC)
+#   1. Create the @byrding scope at jsr.io.
+#   2. Create each package: @byrding/core, @byrding/react, @byrding/vue.
+#   3. For each package: Settings → GitHub Actions Publishing → Enable,
+#      repository = nurmaso/byrding, branch = main.
+#
+# GitHub Actions permissions
+#   Repo → Settings → Actions → General → Workflow permissions:
+#     ✅ Read and write permissions
+#     ✅ Allow GitHub Actions to create and approve pull requests
+#
+# ── Day-to-day workflow ───────────────────────────────────────────────────────
+#
+#   # After finishing a feature or fix:
+#   pnpm changeset          # interactive: pick packages + bump level
+#   git add .changeset/
+#   git commit -m "chore: add changeset"
+#   git push
+#
+#   # → CI creates/updates a "Version Packages" PR.
+#   # Merge that PR → CI publishes the bumped packages to npm and JSR.
+
 on:
   push:
-    tags: ['v*.*.*']
-  workflow_dispatch:
+    branches: [main]
 
 concurrency:
-  group: publish
+  group: release
   cancel-in-progress: false
 
-# ── npm publishing ─────────────────────────────────────────────────────────────
-#
-# Requires a repository secret: NPM_TOKEN
-#   → npm → Access Tokens → Generate New Token (Automation)
-#   → GitHub repo → Settings → Secrets → Actions → NPM_TOKEN
-#
-# publishConfig.provenance: true (in each package.json) attaches a signed
-# SLSA provenance statement linking the published package to this exact
-# commit + workflow run.
-#
-# ── JSR publishing ────────────────────────────────────────────────────────────
-#
-# JSR uses OIDC — no secret needed. The package must be linked to this
-# GitHub repository on jsr.io:
-#   → jsr.io/@byrding/<package> → Settings → GitHub Actions Publishing → Enable
-#
-# Each step publishes from the package directory that contains jsr.json.
-# --allow-dirty skips the git-clean check (pnpm install creates node_modules
-# which is gitignored but may show up as "dirty" in some environments).
+permissions:
+  contents: write        # changesets commits version bumps to main
+  pull-requests: write   # changesets opens the "Version Packages" PR
+  id-token: write        # npm provenance + JSR OIDC (no JSR secret needed)
 
 jobs:
-  publish-npm:
-    name: Publish to npm
+  # ── Job 1: create Version PR or publish to npm ──────────────────────────────
+  release:
+    name: Version or Publish
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write   # required for --provenance
+    outputs:
+      published: ${{ steps.changesets.outputs.published }}
+      publishedPackages: ${{ steps.changesets.outputs.publishedPackages }}
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history so changesets can diff which packages changed
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
 
@@ -55,19 +75,35 @@ jobs:
       - name: Build packages
         run: pnpm build
 
-      - name: Publish to npm
-        run: pnpm -r --filter "./packages/*" publish --access public --no-git-checks --provenance
+      # When changesets exist  → opens/updates the "Version Packages" PR
+      # When no changesets left → runs `pnpm changeset publish` (npm publish)
+      - name: Create release PR or publish to npm
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          version: pnpm changeset version
+          publish: pnpm changeset publish
+          commit: 'chore: version packages'
+          title: 'chore: version packages'
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+  # ── Job 2: publish to JSR (only when npm publish happened) ──────────────────
   publish-jsr:
     name: Publish to JSR
+    needs: release
+    if: needs.release.outputs.published == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write   # required for JSR OIDC
+      id-token: write   # JSR OIDC — no JSR_TOKEN secret required
+
     steps:
+      # Check out the version-bump commit that changesets just pushed to main
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - uses: pnpm/action-setup@v4
 
@@ -79,14 +115,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Publish @byrding/core to JSR
-        run: npx jsr publish --allow-dirty
-        working-directory: packages/core
+      - name: Build packages
+        run: pnpm build
 
-      - name: Publish @byrding/react to JSR
-        run: npx jsr publish --allow-dirty
-        working-directory: packages/react
-
-      - name: Publish @byrding/vue to JSR
-        run: npx jsr publish --allow-dirty
-        working-directory: packages/vue
+      # Publishes only the packages changesets bumped; syncs jsr.json versions
+      - name: Publish to JSR
+        run: node scripts/publish-jsr.mjs
+        env:
+          PUBLISHED: ${{ needs.release.outputs.publishedPackages }}
