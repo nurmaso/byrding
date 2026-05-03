@@ -40,5 +40,5 @@ for (const pkg of packages) {
   console.log(`Synced ${name} jsr.json → ${pkgJson.version}`)
 
   console.log(`Publishing ${name}@${pkgJson.version} to JSR…`)
-  execSync('npx jsr publish --allow-dirty', { cwd: pkgDir, stdio: 'inherit' })
+  execSync('npx jsr publish --allow-dirty --allow-slow-types', { cwd: pkgDir, stdio: 'inherit' })
 }
