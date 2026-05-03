@@ -47,9 +47,13 @@ permissions:
   id-token: write        # npm provenance + JSR OIDC (no JSR secret needed)
 
 jobs:
-  # ── Job 1: create Version PR or publish to npm ──────────────────────────────
-  release:
-    name: Version or Publish
+  # ── Job 1: publish to npm ────────────────────────────────────────────────────
+  # changesets/action has two modes depending on repo state:
+  #   • Pending changesets exist  → opens/updates a "Version Packages" PR (no publish)
+  #   • "Version Packages" PR merged → runs `pnpm changeset publish` → npm
+  # Both modes live in the same action; they cannot be split without custom scripting.
+  publish-npm:
+    name: Publish to npm
     runs-on: ubuntu-latest
     outputs:
       published: ${{ steps.changesets.outputs.published }}
@@ -75,9 +79,7 @@ jobs:
       - name: Build packages
         run: pnpm build
 
-      # When changesets exist  → opens/updates the "Version Packages" PR
-      # When no changesets left → runs `pnpm changeset publish` (npm publish)
-      - name: Create release PR or publish to npm
+      - name: Create Version PR or publish to npm
         id: changesets
         uses: changesets/action@v1
         with:
@@ -92,8 +94,8 @@ jobs:
   # ── Job 2: publish to JSR (only when npm publish happened) ──────────────────
   publish-jsr:
     name: Publish to JSR
-    needs: release
-    if: needs.release.outputs.published == 'true'
+    needs: publish-npm
+    if: needs.publish-npm.outputs.published == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -122,4 +124,4 @@ jobs:
       - name: Publish to JSR
         run: node scripts/publish-jsr.mjs
         env:
-          PUBLISHED: ${{ needs.release.outputs.publishedPackages }}
+          PUBLISHED: ${{ needs.publish-npm.outputs.publishedPackages }}
