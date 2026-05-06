@@ -30,10 +30,14 @@
  */
 
 import { classify } from './classify.js'
-import { createReactiveState } from './proxy.js'
+import { createReactiveState, normaliseKeyPath } from './proxy.js'
 import { subscribe, notify } from './subscriptions.js'
 import { storeRegistry } from './registry.js'
+import { installDevtoolsHook, getDevtoolsHook } from './devtools-hook.js'
 import type { StoreInstance, CoreStore } from './types.js'
+
+// Install the global hook as soon as the core module is loaded.
+installDevtoolsHook()
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -124,7 +128,7 @@ export function createStore<T extends Record<string, unknown>>(
       _actionFns: {},
       _updateMap: new Map(),
       _callbackMap: new Map(),
-      _notify: (keyPath) => notify(storeInstance, keyPath),
+      _notify: (keyPath, _oldValue, _newValue) => notify(storeInstance, keyPath),
     }
 
     if (usingClass) {
@@ -153,8 +157,9 @@ export function createStore<T extends Record<string, unknown>>(
         Object.defineProperty(inst, key, {
           get: () => raw[key],
           set: (v: unknown) => {
+            const oldValue = raw[key]
             raw[key] = v
-            storeInstance._notify(key)
+            storeInstance._notify(key, oldValue, v)
           },
           enumerable: true,
           configurable: true,
@@ -203,20 +208,63 @@ export function createStore<T extends Record<string, unknown>>(
     storeRegistry.set(id, storeInstance)
   }
 
-  // ── Snapshot caching ──────────────────────────────────────────────────────
+  // ── Snapshot caching + devtools wiring ───────────────────────────────────
   //
   // React's `useSyncExternalStore` requires that `getSnapshot()` returns the
   // SAME reference between mutations.  We cache the last snapshot and
   // invalidate it on every notification so only a real change produces a new
   // object reference.
   const store = storeRegistry.get(id)!
+  const hook = getDevtoolsHook()
 
-  // Wrap _notify to invalidate cache on each mutation.
+  // Emit store:init once per store registration.
+  if (hook) {
+    hook.emit({
+      type: 'store:init',
+      storeId: id,
+      state: { ...store._raw },
+      stateKeys: store._stateKeys,
+      actionKeys: store._actionKeys,
+      computedKeys: store._computedKeys,
+      timestamp: Date.now(),
+    })
+  }
+
+  // Wrap _notify — invalidate snapshot cache and emit state:change.
   const originalNotify = store._notify
   let _snapshotCache: Partial<T> | null = null
-  store._notify = (keyPath: string) => {
+  store._notify = (keyPath: string, oldValue?: unknown, newValue?: unknown) => {
     _snapshotCache = null
-    originalNotify(keyPath)
+    hook?.emit({
+      type: 'state:change',
+      storeId: id,
+      keyPath: normaliseKeyPath(keyPath),
+      oldValue,
+      newValue,
+      timestamp: Date.now(),
+    })
+    originalNotify(keyPath, oldValue, newValue)
+  }
+
+  // Wrap each action to emit action:before / action:after.
+  // Async actions are handled — the after event fires when the Promise settles.
+  if (hook) {
+    for (const key of store._actionKeys) {
+      const original = store._actionFns[key]
+      store._actionFns[key] = (...args: unknown[]) => {
+        const startTime = Date.now()
+        hook.emit({ type: 'action:before', storeId: id, action: key, args, timestamp: startTime })
+        const result = original(...args)
+        if (result instanceof Promise) {
+          result.then((resolved) => {
+            hook.emit({ type: 'action:after', storeId: id, action: key, args, result: resolved, durationMs: Date.now() - startTime, timestamp: Date.now() })
+          }).catch(() => {/* let the caller handle the rejection */})
+        } else {
+          hook.emit({ type: 'action:after', storeId: id, action: key, args, result, durationMs: Date.now() - startTime, timestamp: Date.now() })
+        }
+        return result
+      }
+    }
   }
 
   const mergedStore = buildMergedStore<T>(store)

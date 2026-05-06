@@ -52,8 +52,12 @@ export interface StoreInstance {
    */
   _callbackMap: Map<string, () => void>
 
-  /** Fires subscriber callbacks for the given key path. */
-  _notify: (keyPath: string) => void
+  /**
+   * Fires subscriber callbacks for the given key path.
+   * `oldValue` and `newValue` are forwarded to the devtools hook for
+   * state:change events; they are not used by the subscription system itself.
+   */
+  _notify: (keyPath: string, oldValue?: unknown, newValue?: unknown) => void
 }
 
 // ─── Framework-adapter surface ───────────────────────────────────────────────
