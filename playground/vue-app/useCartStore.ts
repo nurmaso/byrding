@@ -8,6 +8,6 @@
  * read `store.items` or `store.totalItems`, and vice versa.
  */
 import { defineStore } from '@byrding/vue'
-import { cartId, CartStore } from '../shared/cart.store.js'
+import { cartId, cartDefinition } from '../shared/cart.store.js'
 
-export const useCartStore = defineStore(cartId, CartStore)
+export const useCartStore = defineStore(cartId, cartDefinition)

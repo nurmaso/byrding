@@ -29,6 +29,8 @@ export default defineConfig({
               link: '/guide/selective-subscriptions',
             },
             { text: 'Cross-framework sharing', link: '/guide/cross-framework' },
+            { text: 'Agent guidance', link: '/guide/agent-guidance' },
+            { text: 'Consumer agent guidance', link: '/guide/consumer-agent-guidance' },
           ],
         },
       ],

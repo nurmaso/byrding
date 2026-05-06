@@ -2,42 +2,99 @@
 
 Location: [`playground/`](https://github.com/nurmaso/bocal/tree/main/playground)
 
-A cross-framework code sample: a React app and a Vue app share a single `CartStore` at runtime. This folder is currently **source-only** — it demonstrates the wiring pattern but does not ship its own build tooling. Copy the files into your own React / Vue projects to try it live, or open an issue if you'd like a runnable harness added.
+A runnable cross-framework demo: a React tree and a Vue tree are mounted on the same page and share a single `CartStore` at runtime. Mutating state from one framework immediately updates the other.
+
+## Run it
+
+```bash
+git clone https://github.com/nurmaso/bocal.git
+cd byrding
+pnpm install
+cd playground
+pnpm dev
+```
+
+Open `http://localhost:5173`.
 
 ## Layout
 
 ```
 playground/
+├── index.html               ← two mount points: #react-root and #vue-root
+├── main.ts                  ← boots React + Vue into the same page
+├── vite.config.ts
 ├── shared/
 │   └── cart.store.ts        ← CartStore class + cartDefinition factory + cartId
 ├── react-app/
-│   ├── useCartStore.ts      ← defineStore(cartId, CartStore) from @byrding/react
+│   ├── useCartStore.ts      ← defineStore(cartId, CartStore)   from @byrding/react
 │   └── Cart.tsx
 └── vue-app/
-    ├── useCartStore.ts      ← defineStore(cartId, CartStore) from @byrding/vue
+    ├── useCartStore.ts      ← defineStore(cartId, cartDefinition) from @byrding/vue
     ├── Cart.vue
     └── CartSummary.vue
 ```
 
-## Key pattern
+## Key pattern — one store, two definitions
 
-The `shared/` folder exports both the store `id` (`cartId`) and the definition (a `CartStore` class, or a `cartDefinition` factory — either works). Each framework folder imports both and hands them to its own `defineStore`:
+The shared file exports an `id`, a class, and a factory:
+
+```ts
+// shared/cart.store.ts
+export const cartId = 'cart'
+
+export class CartStore {
+  items: Array<{ id: string; qty: number }> = []
+  // ...
+}
+
+export const cartDefinition = () => {
+  const store = { items: [] as Array<{ id: string; qty: number }>, /* ... */ }
+  return store
+}
+```
+
+React imports the class:
 
 ```ts
 // react-app/useCartStore.ts
 import { defineStore } from '@byrding/react'
-import { cartId, CartStore } from '../shared/cart.store'
+import { cartId, CartStore } from '../shared/cart.store.js'
 export const useCartStore = defineStore(cartId, CartStore)
 ```
+
+Vue imports the factory — a different definition, same store:
 
 ```ts
 // vue-app/useCartStore.ts
 import { defineStore } from '@byrding/vue'
-import { cartId, CartStore } from '../shared/cart.store'
-export const useCartStore = defineStore(cartId, CartStore)
+import { cartId, cartDefinition } from '../shared/cart.store.js'
+export const useCartStore = defineStore(cartId, cartDefinition)
 ```
 
-Because both `defineStore` calls route through `@byrding/core`'s `storeRegistry`, the second call finds the existing singleton and wraps it in a Vue composable. **First registration wins** — it does not matter whether React or Vue starts first.
+Both calls route through `@byrding/core`'s `storeRegistry`. React registers first; Vue's `cartDefinition` is silently discarded and Vue connects to the existing `CartStore` singleton. **First registration wins.**
+
+## Booting both frameworks in one entry
+
+```ts
+// main.ts
+import React from 'react'
+import { createRoot } from 'react-dom/client'
+import { Cart, CartSummary } from './react-app/Cart.tsx'
+
+createRoot(document.getElementById('react-root')!).render(
+  React.createElement(React.Fragment, null,
+    React.createElement(Cart),
+    React.createElement(CartSummary),
+  ),
+)
+
+import { createApp, defineComponent, h } from 'vue'
+import VueCart from './vue-app/Cart.vue'
+import VueCartSummary from './vue-app/CartSummary.vue'
+
+createApp(defineComponent({ render: () => [h(VueCart), h(VueCartSummary)] }))
+  .mount(document.getElementById('vue-root')!)
+```
 
 ## See also
 

@@ -809,4 +809,126 @@ Execute in this exact sequence. Do not proceed until tests pass at each step.
 - **Vue `shallowRef` requires a new object reference on each update.** `getSnapshot` returns `{ ...store._raw }` — a fresh object every call.
 - **Computed values are not in the snapshot.** `getSnapshot` returns raw state only. React uses the snapshot to detect *whether* to re-render, not as what gets rendered. Computed values are re-evaluated from the merged object's getters after each render.
 - **Circular references in state are not supported.** State must be plain serialisable objects.
+
+---
+
+## 12. Running React and Vue side by side (playground)
+
+The `playground/` package is a Vite app that mounts both a React tree and a Vue tree into the same HTML page. Both share a single store instance at runtime.
+
+### Vite setup
+
+> **Monorepo only.** The alias block below points Vite at the workspace package sources so no build step is needed during development. In a normal project, consumers install `@byrding/react` and `@byrding/vue` from npm and no alias is needed.
+
+Install both framework plugins and point the workspace packages at their source so no build step is needed in dev:
+
+```ts
+// playground/vite.config.ts
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import vue from '@vitejs/plugin-vue'
+import { resolve } from 'path'
+
+export default defineConfig({
+  plugins: [react(), vue()],
+  resolve: {
+    alias: {
+      '@byrding/core':  resolve(__dirname, '../packages/core/src/index.ts'),
+      '@byrding/react': resolve(__dirname, '../packages/react/src/index.ts'),
+      '@byrding/vue':   resolve(__dirname, '../packages/vue/src/index.ts'),
+    },
+  },
+})
+```
+
+### HTML entry — two mount points
+
+```html
+<!-- playground/index.html -->
+<div id="react-root"></div>
+<div id="vue-root"></div>
+<script type="module" src="/main.ts"></script>
+```
+
+### Unified entry — mount both frameworks
+
+```ts
+// playground/main.ts
+import React from 'react'
+import { createRoot } from 'react-dom/client'
+import { Cart, CartSummary } from './react-app/Cart.tsx'
+
+createRoot(document.getElementById('react-root')!).render(
+  React.createElement(React.Fragment, null,
+    React.createElement(Cart),
+    React.createElement(CartSummary),
+  ),
+)
+
+import { createApp, defineComponent, h } from 'vue'
+import VueCart from './vue-app/Cart.vue'
+import VueCartSummary from './vue-app/CartSummary.vue'
+
+createApp(defineComponent({ render: () => [h(VueCart), h(VueCartSummary)] }))
+  .mount(document.getElementById('vue-root')!)
+```
+
+Because both framework adapters call `createStore(cartId, ...)` through the same module graph, `@byrding/core`'s singleton registry is shared. Only one store instance ever exists.
+
+### Each framework can pass a different definition
+
+The second adapter to call `defineStore` may pass a completely different definition. The registry ignores it — **first registration wins**. Use this to demonstrate that each framework can use the style it prefers:
+
+```ts
+// react-app/useCartStore.ts — class style
+import { defineStore } from '@byrding/react'
+import { cartId, CartStore } from '../shared/cart.store.js'
+export const useCartStore = defineStore(cartId, CartStore)
+```
+
+```ts
+// vue-app/useCartStore.ts — closure style; CartStore definition is discarded
+import { defineStore } from '@byrding/vue'
+import { cartId, cartDefinition } from '../shared/cart.store.js'
+export const useCartStore = defineStore(cartId, cartDefinition)
+```
+
+### Proxy gotcha — always replace arrays, never mutate in place
+
+The Proxy wraps `_raw` at the top level. `push()` and index/property mutations on nested arrays do **not** trigger the `set` trap. Always replace the array reference so notifications fire:
+
+```ts
+// ✗ silent — proxy never sees the mutation
+this.items.push({ id, qty: 1 })
+existing.qty++
+
+// ✓ triggers set trap → subscribers notified
+this.items = [...this.items, { id, qty: 1 }]
+this.items = this.items.map((i) => i.id === id ? { ...i, qty: i.qty + 1 } : i)
+```
+
+### Vue destructuring — use `toRefs`
+
+Destructuring primitives from a `shallowReactive` object loses Vue reactivity. Wrap with `toRefs` to keep each property tracked:
+
+```ts
+// ✗ totalItems and total are dead snapshots
+const { totalItems, total } = useCartStore()
+
+// ✓ toRefs keeps them reactive
+import { toRefs } from 'vue'
+const { totalItems, total } = toRefs(useCartStore())
+```
+
+### Snapshot cache and dynamic `_notify` binding
+
+`createStore` wraps `store._notify` after construction to invalidate the React snapshot cache on each mutation. The Proxy must not capture `_notify` by value at construction time — it must call through the instance so later wrappers are picked up:
+
+```ts
+// ✗ captures stale reference — snapshot never invalidated
+storeInstance._proxy = createReactiveState(raw, storeInstance._notify)
+
+// ✓ looks up _notify dynamically on each set
+storeInstance._proxy = createReactiveState(raw, (path) => storeInstance._notify(path))
+```
 - **Class inheritance is allowed but discouraged for P0.** `classify` walks one level of the prototype chain only.

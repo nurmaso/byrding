@@ -5,12 +5,8 @@
 </template>
 
 <script setup lang="ts">
+import { toRefs } from 'vue'
 import { useCartStore } from './useCartStore.js'
 
-/**
- * Destructuring style — mirrors BComponent.tsx in the React app.
- * Because `useCartStore()` returns a shallowReactive object, destructured
- * variables retain Vue reactivity through the reactive proxy.
- */
-const { totalItems, total } = useCartStore()
+const { totalItems, total } = toRefs(useCartStore())
 </script>

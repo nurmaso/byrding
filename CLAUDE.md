@@ -30,6 +30,11 @@ Load these before starting any implementation work:
 - **Project overview:** `.claude/docs/small-scope-projects-overview.md`
   — Sprint methodology, backlog, and P0 scope boundaries.
 
+If you are writing application code that **uses** `@byrding/react` or `@byrding/vue` (not modifying the library itself), read this instead:
+
+- **Consumer best practices:** `.claude/docs/byrding-consumer-agent-guidance.md`
+  — Concise install, store definition, consumption patterns, and critical gotchas for agent-generated consumer code.
+
 ---
 
 ## Repo structure

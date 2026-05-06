@@ -36,14 +36,16 @@ export class CartStore {
   addItem(id: string): void {
     const existing = this.items.find((i) => i.id === id)
     if (existing) {
-      existing.qty++
+      this.items = this.items.map((i) => i.id === id ? { ...i, qty: i.qty + 1 } : i)
     } else {
-      this.items.push({ id, qty: 1 })
+      this.items = [...this.items, { id, qty: 1 }]
     }
   }
 
   removeItem(id: string): void {
-    this.items = this.items.filter((i) => i.id !== id)
+    this.items = this.items
+      .map((i) => i.id === id ? { ...i, qty: i.qty - 1 } : i)
+      .filter((i) => i.qty > 0)
   }
 
   clear(): void {
@@ -73,14 +75,16 @@ export const cartDefinition = () => {
     addItem(id: string): void {
       const existing = store.items.find((i) => i.id === id)
       if (existing) {
-        existing.qty++
+        store.items = store.items.map((i) => i.id === id ? { ...i, qty: i.qty + 1 } : i)
       } else {
-        store.items.push({ id, qty: 1 })
+        store.items = [...store.items, { id, qty: 1 }]
       }
     },
 
     removeItem(id: string): void {
-      store.items = store.items.filter((i) => i.id !== id)
+      store.items = store.items
+        .map((i) => i.id === id ? { ...i, qty: i.qty - 1 } : i)
+        .filter((i) => i.qty > 0)
     },
 
     clear(): void {

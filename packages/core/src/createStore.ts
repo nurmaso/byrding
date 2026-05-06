@@ -134,7 +134,7 @@ export function createStore<T extends Record<string, unknown>>(
         raw[key] = (instance as Record<string, unknown>)[key]
       }
       storeInstance._raw = raw
-      storeInstance._proxy = createReactiveState(raw, storeInstance._notify)
+      storeInstance._proxy = createReactiveState(raw, (path) => storeInstance._notify(path))
 
     } else {
       // ── Closure strategy: reactive setters on the instance ─────────────────
