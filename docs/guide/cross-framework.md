@@ -11,14 +11,21 @@ Because the reactivity engine lives in `@byrding/core`, a single store instance 
    - Vue: a `shallowReactive` copy synced with `Object.assign` on notification.
 4. Mutations go through the single underlying instance, so notifications fan out to every subscriber regardless of which adapter registered them.
 
+## Install
+
+```bash
+npm install @byrding/react @byrding/vue
+```
+
 ## Pattern: shared definition file
 
-Export the `id` and the class/factory from one file. Each framework imports and wraps:
+Export the `id` and one or more definitions from a shared file. Each framework imports and wraps with its own `defineStore` — they can even use different definition styles. Because `createStore` is idempotent, the first adapter to register wins and all subsequent calls receive the same singleton:
 
 ```ts
 // shared/cart.store.ts
 export const cartId = 'cart'
 
+// class style — used by the React adapter
 export class CartStore {
   items: Array<{ id: string; qty: number }> = []
   taxRate = 0.19
@@ -29,13 +36,25 @@ export class CartStore {
 
   addItem(id: string) {
     const existing = this.items.find((i) => i.id === id)
-    if (existing) existing.qty++
-    else this.items.push({ id, qty: 1 })
+    if (existing) {
+      this.items = this.items.map((i) => i.id === id ? { ...i, qty: i.qty + 1 } : i)
+    } else {
+      this.items = [...this.items, { id, qty: 1 }]
+    }
   }
 
   clear() {
     this.items = []
   }
+}
+
+// closure style — used by the Vue adapter (definition discarded; same singleton returned)
+export const cartDefinition = () => {
+  const store = {
+    items: [] as Array<{ id: string; qty: number }>,
+    // ...same shape as CartStore
+  }
+  return store
 }
 ```
 
@@ -50,12 +69,13 @@ export const useCartStore = defineStore(cartId, CartStore)
 ```ts
 // vue-app/useCartStore.ts
 import { defineStore } from '@byrding/vue'
-import { cartId, CartStore } from '../shared/cart.store'
+import { cartId, cartDefinition } from '../shared/cart.store'
 
-export const useCartStore = defineStore(cartId, CartStore)
+// cartDefinition is discarded — Vue connects to the CartStore singleton React registered
+export const useCartStore = defineStore(cartId, cartDefinition)
 ```
 
-Both `defineStore` calls hit the same entry in the registry. Only the first call actually instantiates `CartStore`; the second wraps the existing singleton in a Vue composable.
+Both `defineStore` calls hit the same entry in the registry. Only the first instantiates the store; the second wraps the existing singleton in a Vue composable.
 
 ## Live example
 

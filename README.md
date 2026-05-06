@@ -2,6 +2,14 @@
 
 A tiny reactive store with a vanilla-JS core and thin React + Vue adapters. One store can back components in multiple frameworks at the same time.
 
+## For AI agents
+
+Generating code that **uses** `@byrding/react` or `@byrding/vue`? Read [`.claude/docs/byrding-consumer-agent-guidance.md`](./.claude/docs/byrding-consumer-agent-guidance.md) — concise best practices, critical gotchas, and copy-paste patterns.
+
+Modifying the library internals? Read [`.claude/docs/byrding-refactor-agent-guidance.md`](./.claude/docs/byrding-refactor-agent-guidance.md) for the full architecture and implementation contract.
+
+---
+
 ## Repo layout
 
 ```

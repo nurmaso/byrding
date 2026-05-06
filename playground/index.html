@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Byrding Playground — React + Vue</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: monospace;
+        background: #0f0f0f;
+        color: #e8e8e8;
+        min-height: 100vh;
+        padding: 2rem;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      header h1 {
+        font-size: 1.5rem;
+        letter-spacing: 0.05em;
+        color: #a8c8ff;
+      }
+
+      header p {
+        margin-top: 0.5rem;
+        color: #888;
+        font-size: 0.85rem;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        max-width: 960px;
+        margin: 0 auto;
+      }
+
+      .panel {
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 1.5rem;
+      }
+
+      .panel-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: #666;
+        margin-bottom: 1rem;
+      }
+
+      #react-root .panel-label { color: #61dafb; }
+      #vue-root   .panel-label { color: #42b883; }
+
+      @media (max-width: 640px) {
+        .grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>@byrding — shared store playground</h1>
+      <p>One store, two frameworks. Mutations from either side update both.</p>
+    </header>
+
+    <div class="grid">
+      <div class="panel" id="react-root">
+        <div class="panel-label">React 18</div>
+      </div>
+      <div class="panel" id="vue-root">
+        <div class="panel-label">Vue 3</div>
+      </div>
+    </div>
+
+    <script type="module" src="/main.ts"></script>
+  </body>
+</html>

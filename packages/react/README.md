@@ -2,6 +2,8 @@
 
 React adapter. Turns a store definition into a React hook.
 
+> **AI agents** — see the [consumer agent guidance](https://github.com/nurmaso/byrding/blob/main/.claude/docs/byrding-consumer-agent-guidance.md) for best practices, patterns, and gotchas.
+
 ## Install
 
 ```bash

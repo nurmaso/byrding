@@ -2,6 +2,8 @@
 
 Framework-agnostic reactivity engine. App code does not call this package directly — it's the substrate for `@byrding/react` and `@byrding/vue`. Use this reference if you're writing a new adapter or debugging.
 
+> **AI agents** — if you're generating consumer code, see the [consumer agent guidance](https://github.com/nurmaso/byrding/blob/main/.claude/docs/byrding-consumer-agent-guidance.md). If you're implementing a new adapter, see the [refactor agent guidance](https://github.com/nurmaso/byrding/blob/main/.claude/docs/byrding-refactor-agent-guidance.md).
+
 ## Install
 
 ```bash
