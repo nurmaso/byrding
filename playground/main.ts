@@ -13,6 +13,7 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { Cart, CartSummary } from './react-app/Cart.tsx'
+import { ToggleComponent } from './react-app/Toggle.tsx'
 
 const reactMount = document.getElementById('react-root')!
 createRoot(reactMount).render(
@@ -21,6 +22,7 @@ createRoot(reactMount).render(
     null,
     React.createElement(Cart),
     React.createElement(CartSummary),
+    React.createElement(ToggleComponent),
   ),
 )
 

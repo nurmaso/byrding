@@ -170,10 +170,31 @@ export function createStore<T extends Record<string, unknown>>(
       storeInstance._proxy = inst
     }
 
+    // ── Computed-aware binding target (class style only) ──────────────────────
+    //
+    // Class getters bound to `_proxy` can call each other via `this`, e.g.
+    // `total` doing `this.subtotal`.  `_proxy` wraps only `_raw` (state keys),
+    // so `this.subtotal` would return `undefined` → NaN.  We create a thin
+    // wrapper that intercepts reads of computed keys and routes them through
+    // `_getterFns`, while all state reads/writes still flow through `_proxy`.
+    //
+    // For closure style `_proxy` IS the instrumented instance whose own getters
+    // already close over the right reference — no wrapper needed.
+    const bindTarget: Record<string, unknown> = usingClass
+      ? new Proxy(storeInstance._proxy, {
+          get(target, key: string) {
+            const fn = storeInstance._getterFns[key]
+            if (typeof key === 'string' && fn) return fn()
+            return Reflect.get(target, key)
+          },
+        })
+      : storeInstance._proxy
+
     // ── Bind actions ─────────────────────────────────────────────────────────
     //
-    // Class:   bind to `_proxy` so `this.count++` goes through the Proxy set
-    //          trap → notification.
+    // Class:   bind to `bindTarget` so `this.count++` goes through the Proxy
+    //          set trap → notification, and `this.computedKey` resolves via
+    //          `_getterFns` instead of returning undefined from `_raw`.
     // Closure: bind is effectively a no-op for `this`, but we bind anyway so
     //          the function runs in the correct context.  The closure variable
     //          already points to the instrumented instance.
@@ -183,14 +204,15 @@ export function createStore<T extends Record<string, unknown>>(
           (instance as Record<string, unknown>)[key])
         : (instance as Record<string, unknown>)[key]
       storeInstance._actionFns[key] = (fn as (...a: unknown[]) => unknown).bind(
-        storeInstance._proxy,
+        bindTarget,
       )
     }
 
     // ── Bind getters ─────────────────────────────────────────────────────────
     //
-    // Class:   getter on the prototype, bound to `_proxy` so `this.count`
-    //          reads through the Proxy.
+    // Class:   getter on the prototype, bound to `bindTarget` so `this.count`
+    //          reads through the Proxy and `this.otherGetter` resolves via
+    //          `_getterFns`.
     // Closure: getter as own property, bound to `_proxy` (= instrumented
     //          instance).  The getter uses the closure variable which IS
     //          `_proxy`, so reads go through the reactive getter accessor.
@@ -201,7 +223,7 @@ export function createStore<T extends Record<string, unknown>>(
           ? Object.getOwnPropertyDescriptor(proto, key)
           : undefined)
       if (descriptor?.get) {
-        storeInstance._getterFns[key] = descriptor.get.bind(storeInstance._proxy)
+        storeInstance._getterFns[key] = descriptor.get.bind(bindTarget)
       }
     }
 
