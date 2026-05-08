@@ -1,6 +1,6 @@
 {
   "name": "@byrding/vue",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Vue 3 adapter for @byrding/core — defineStore returns a composable via shallowReactive",
   "type": "module",
   "main": "./dist/index.js",
@@ -11,7 +11,10 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "build": "tsc --project tsconfig.json",
     "prepublishOnly": "pnpm run build"
