@@ -91,6 +91,29 @@ Full source code and test requirements for each step are in `.claude/docs/byrdin
 
 ---
 
+## Versioning and PR workflow
+
+Every change to a publishable package (`@byrding/core`, `@byrding/react`, `@byrding/vue`) must go through this sequence before the work is considered done:
+
+1. **Create a changeset** — add a `.changeset/<slug>.md` file describing the bump type and reason:
+   ```
+   ---
+   "@byrding/core": patch   # patch | minor | major
+   ---
+   One-line description of what changed and why.
+   ```
+   Use `patch` for bug fixes, `minor` for backwards-compatible new features, `major` for breaking changes.
+
+2. **Bump versions** — run `pnpm changeset version`. This reads all `.changeset/*.md` files, updates the affected `package.json` versions, writes `CHANGELOG.md` entries, and deletes the consumed changeset files. Packages that depend on a bumped package are also patched automatically (`updateInternalDependencies: "patch"` in `.changeset/config.json`).
+
+3. **Verify the build** — run `pnpm build` and confirm it passes with no TypeScript errors before opening the PR.
+
+4. **Commit and open a PR** — commit the version bumps and changelogs in a single commit (`chore: version packages`), push, and open a PR against `main`.
+
+> **Never manually edit `package.json` version fields.** Always go through `pnpm changeset version` so changelogs stay in sync.
+
+---
+
 ## P0 out of scope — do not implement
 
 - Plugins API
