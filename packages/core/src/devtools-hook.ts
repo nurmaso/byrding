@@ -90,11 +90,7 @@ export interface ByrdingDevtoolsHook {
   on(handler: (event: DevtoolsEvent) => void): () => void
 }
 
-declare global {
-  interface Window {
-    __BYRDING_DEVTOOLS__?: ByrdingDevtoolsHook
-  }
-}
+type DevtoolsWindow = typeof globalThis & { __BYRDING_DEVTOOLS__?: ByrdingDevtoolsHook }
 
 // ─── Install / access ─────────────────────────────────────────────────────────
 
@@ -117,8 +113,9 @@ function createHook(): ByrdingDevtoolsHook {
  */
 export function installDevtoolsHook(): void {
   if (typeof window === 'undefined') return
-  if (window.__BYRDING_DEVTOOLS__) return
-  window.__BYRDING_DEVTOOLS__ = createHook()
+  const w = window as DevtoolsWindow
+  if (w.__BYRDING_DEVTOOLS__) return
+  w.__BYRDING_DEVTOOLS__ = createHook()
 }
 
 /**
@@ -127,5 +124,5 @@ export function installDevtoolsHook(): void {
  */
 export function getDevtoolsHook(): ByrdingDevtoolsHook | null {
   if (typeof window === 'undefined') return null
-  return window.__BYRDING_DEVTOOLS__ ?? null
+  return (window as DevtoolsWindow).__BYRDING_DEVTOOLS__ ?? null
 }

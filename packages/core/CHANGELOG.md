@@ -1,5 +1,11 @@
 # @byrding/core
 
+## 0.1.2
+
+### Patch Changes
+
+- Replace `declare global` Window augmentation with a local type alias to satisfy JSR's restriction on modifying global types.
+
 ## 0.1.1
 
 ### Patch Changes
