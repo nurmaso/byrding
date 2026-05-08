@@ -5,8 +5,8 @@
  * The devtools panel connects to this hook to receive store events.
  * Framework adapters emit component lifecycle events through the same hook.
  *
- * Only active when `process.env.NODE_ENV !== 'production'`.
- * Tree-shaken away in production builds by bundlers that replace NODE_ENV.
+ * Only active in browser environments (`window` must be defined).
+ * A no-op when no devtools panel is connected.
  */
 
 // ─── Event payloads ──────────────────────────────────────────────────────────
@@ -117,7 +117,6 @@ function createHook(): ByrdingDevtoolsHook {
  */
 export function installDevtoolsHook(): void {
   if (typeof window === 'undefined') return
-  if (process.env.NODE_ENV === 'production') return
   if (window.__BYRDING_DEVTOOLS__) return
   window.__BYRDING_DEVTOOLS__ = createHook()
 }

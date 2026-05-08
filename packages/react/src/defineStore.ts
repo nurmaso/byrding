@@ -38,7 +38,6 @@ import { createStore, generateComponentId, getDevtoolsHook } from '@byrding/core
  * Only runs in development; returns `undefined` in production.
  */
 function inferComponentName(): string | undefined {
-  if (process.env.NODE_ENV === 'production') return undefined
   try {
     const lines = new Error().stack?.split('\n') ?? []
     // lines[0] = 'Error'
