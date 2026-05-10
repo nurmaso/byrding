@@ -1,5 +1,11 @@
 # @byrding/core
 
+## 0.3.0
+
+### Minor Changes
+
+- Add global `CoreStore` singleton with plugin registry: `configureByrding({ plugins })` for one-time setup and `coreStore.use()` for dynamic registration. Plugin hooks (`onInit`, `onStateChange`, `onAction`, `onDispose`) are invoked automatically by `createStore`.
+
 ## 0.2.0
 
 ### Minor Changes

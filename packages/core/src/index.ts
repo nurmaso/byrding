@@ -17,6 +17,9 @@ export { storeRegistry } from './registry.js'
 // Core primitive — used by framework adapters only
 export { createStore, generateComponentId } from './createStore.js'
 
+// Plugin system
+export { coreStore, configureByrding } from './coreStore.js'
+
 // Devtools hook — consumed by framework adapters and the devtools panel
 export { installDevtoolsHook, getDevtoolsHook } from './devtools-hook.js'
 export type {

@@ -1,6 +1,6 @@
 {
   "name": "@byrding/vue",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Vue 3 adapter for @byrding/core — defineStore returns a composable via shallowReactive",
   "type": "module",
   "main": "./dist/index.js",
