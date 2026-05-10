@@ -1,5 +1,11 @@
 # @byrding/core
 
+## 0.2.0
+
+### Minor Changes
+
+- Export `Plugin` and `PluginFactory` TypeScript interfaces — foundational type contract for the plugin system.
+
 ## 0.1.2
 
 ### Patch Changes

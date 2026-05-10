@@ -60,6 +60,18 @@ export interface StoreInstance {
   _notify: (keyPath: string, oldValue?: unknown, newValue?: unknown) => void
 }
 
+// ─── Plugin system ───────────────────────────────────────────────────────────
+
+export interface Plugin<S extends Record<string, unknown> = Record<string, unknown>> {
+  onInit?(storeId: string, snapshot: S): void
+  onStateChange?(storeId: string, path: string, next: unknown, prev: unknown): void
+  onAction?(storeId: string, actionName: string, args: unknown[]): void
+  onDispose?(storeId: string): void
+}
+
+export type PluginFactory<S extends Record<string, unknown> = Record<string, unknown>> =
+  (...args: unknown[]) => Plugin<S>
+
 // ─── Framework-adapter surface ───────────────────────────────────────────────
 
 /**

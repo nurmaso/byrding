@@ -1,5 +1,5 @@
 // Types (consumed by framework adapters)
-export type { StoreInstance, CoreStore } from './types.js'
+export type { StoreInstance, CoreStore, Plugin, PluginFactory } from './types.js'
 
 // Classification
 export { classify } from './classify.js'
