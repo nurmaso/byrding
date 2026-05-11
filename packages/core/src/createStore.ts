@@ -33,7 +33,7 @@ import { classify } from './classify.js'
 import { createReactiveState, normaliseKeyPath } from './proxy.js'
 import { subscribe, notify } from './subscriptions.js'
 import { storeRegistry } from './registry.js'
-import { coreStore } from './coreStore.js'
+import { coreStore, CoreStore } from './coreStore.js'
 import type { StoreInstance, StoreHandle } from './types.js'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -90,18 +90,25 @@ function buildMergedStore<T>(store: StoreInstance): T {
 // ─── Core primitive ──────────────────────────────────────────────────────────
 
 /**
- * Create (or retrieve) the store for `id` and return a `CoreStore<T>` that
+ * Create (or retrieve) the store for `id` and return a `StoreHandle<T>` that
  * framework adapters can consume.
  *
  * @param id         Unique store name.
  * @param definition A class constructor **or** a factory function.
+ * @param options    Optional. Pass `core` to use an isolated CoreStore instance
+ *                   instead of the global singleton — global plugins will NOT
+ *                   run for this store.
  */
 export function createStore<T extends Record<string, unknown>>(
   id: string,
   definition: (new () => T) | (() => T),
+  options?: { core?: CoreStore },
 ): StoreHandle<T> {
 
+  // Always mark the global singleton as initialized so configureByrding throws
+  // if called after any store has been created — even stores using an injected core.
   coreStore.markInitialized()
+  const activeCore = options?.core ?? coreStore
 
   // ── Lazy singleton initialisation ─────────────────────────────────────────
   if (!storeRegistry.has(id)) {
@@ -227,7 +234,7 @@ export function createStore<T extends Record<string, unknown>>(
     }
 
     storeRegistry.set(id, storeInstance)
-    coreStore.runOnInit(id, { ...storeInstance._raw })
+    activeCore.runOnInit(id, { ...storeInstance._raw })
   }
 
   // ── Snapshot caching ──────────────────────────────────────────────────────
@@ -242,14 +249,14 @@ export function createStore<T extends Record<string, unknown>>(
   let _snapshotCache: Partial<T> | null = null
   store._notify = (keyPath: string, oldValue?: unknown, newValue?: unknown) => {
     _snapshotCache = null
-    coreStore.runOnStateChange(id, normaliseKeyPath(keyPath), newValue, oldValue)
+    activeCore.runOnStateChange(id, normaliseKeyPath(keyPath), newValue, oldValue)
     originalNotify(keyPath, oldValue, newValue)
   }
 
   for (const key of store._actionKeys) {
     const original = store._actionFns[key]
     store._actionFns[key] = (...args: unknown[]) => {
-      coreStore.runOnAction(id, key, args)
+      activeCore.runOnAction(id, key, args)
       return original(...args)
     }
   }

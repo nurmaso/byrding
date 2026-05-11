@@ -1,5 +1,16 @@
 # @byrding/vue
 
+## 0.2.0
+
+### Minor Changes
+
+- `defineStore` accepts an optional `options` third argument `{ core?: CoreStore }` and forwards it to `createStore`. Allows micro-frontends and isolated app sections to use their own plugin context without touching the global singleton. Rename local `coreStore` variable → `storeHandle` to avoid shadowing the imported class.
+
+### Patch Changes
+
+- Updated dependencies
+  - @byrding/core@0.4.0
+
 ## 0.1.4
 
 ### Patch Changes
@@ -28,3 +39,9 @@
 
 - Updated dependencies [7290074]
   - @byrding/core@0.1.1
+
+## 0.1.0
+
+### Minor Changes
+
+- Initial implementation of @byrding/vue
