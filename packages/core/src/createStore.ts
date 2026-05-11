@@ -34,7 +34,7 @@ import { createReactiveState, normaliseKeyPath } from './proxy.js'
 import { subscribe, notify } from './subscriptions.js'
 import { storeRegistry } from './registry.js'
 import { coreStore, CoreStore } from './coreStore.js'
-import type { StoreInstance, StoreHandle } from './types.js'
+import type { StoreInstance, StoreHandle, Plugin } from './types.js'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -118,6 +118,21 @@ export function createStore<T extends Record<string, unknown>>(
       ? new (definition as new () => T)()
       : (definition as () => T)()
 
+    // Extract per-store plugins before classify runs so that `plugins` is never
+    // bucketed as a state key.  For class style, read the static property off the
+    // constructor; for closure style, read and delete the instance property.
+    const localPlugins: Plugin[] = []
+    if (usingClass) {
+      const sp = (definition as unknown as { plugins?: Plugin[] }).plugins
+      if (Array.isArray(sp)) localPlugins.push(...sp)
+    } else {
+      const inst = instance as Record<string, unknown>
+      if (Array.isArray(inst['plugins'])) {
+        localPlugins.push(...(inst['plugins'] as Plugin[]))
+        delete inst['plugins']
+      }
+    }
+
     const { stateKeys, actionKeys, computedKeys } = classify(instance)
     const proto = Object.getPrototypeOf(instance)
     const hasProto = proto && proto !== Object.prototype
@@ -135,6 +150,7 @@ export function createStore<T extends Record<string, unknown>>(
       _updateMap: new Map(),
       _callbackMap: new Map(),
       _notify: (keyPath, _oldValue, _newValue) => notify(storeInstance, keyPath),
+      _localPlugins: localPlugins,
     }
 
     if (usingClass) {
@@ -235,6 +251,7 @@ export function createStore<T extends Record<string, unknown>>(
 
     storeRegistry.set(id, storeInstance)
     activeCore.runOnInit(id, { ...storeInstance._raw })
+    for (const p of localPlugins) p.onInit?.(id, storeInstance._raw)
   }
 
   // ── Snapshot caching ──────────────────────────────────────────────────────
@@ -250,6 +267,7 @@ export function createStore<T extends Record<string, unknown>>(
   store._notify = (keyPath: string, oldValue?: unknown, newValue?: unknown) => {
     _snapshotCache = null
     activeCore.runOnStateChange(id, normaliseKeyPath(keyPath), newValue, oldValue)
+    for (const p of store._localPlugins) p.onStateChange?.(id, normaliseKeyPath(keyPath), newValue, oldValue)
     originalNotify(keyPath, oldValue, newValue)
   }
 
@@ -257,6 +275,7 @@ export function createStore<T extends Record<string, unknown>>(
     const original = store._actionFns[key]
     store._actionFns[key] = (...args: unknown[]) => {
       activeCore.runOnAction(id, key, args)
+      for (const p of store._localPlugins) p.onAction?.(id, key, args)
       return original(...args)
     }
   }

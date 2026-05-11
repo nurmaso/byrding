@@ -58,6 +58,15 @@ export interface StoreInstance {
    * state:change events; they are not used by the subscription system itself.
    */
   _notify: (keyPath: string, oldValue?: unknown, newValue?: unknown) => void
+
+  /**
+   * Per-store plugins extracted from the definition at registration time.
+   * Class style: read from `static plugins` on the constructor.
+   * Closure style: read from the `plugins` key on the returned instance
+   * (removed before classify so it is never treated as reactive state).
+   * Run after the active global CoreStore's hooks, global-first order.
+   */
+  _localPlugins: Plugin[]
 }
 
 // ─── Plugin system ───────────────────────────────────────────────────────────
