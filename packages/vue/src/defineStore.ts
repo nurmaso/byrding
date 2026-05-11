@@ -26,16 +26,16 @@
  */
 
 import { shallowReactive, onUnmounted, getCurrentInstance } from 'vue'
-import { createStore, generateComponentId, getDevtoolsHook, type CoreStore } from '@byrding/core'
+import { createStore, generateComponentId, getDevtoolsHook, type CoreStore, type Plugin } from '@byrding/core'
 
 // ─── defineStore ─────────────────────────────────────────────────────────────
 
 export function defineStore<T extends Record<string, unknown>>(
   id: string,
   definition: (new () => T) | (() => T),
-  options?: { core?: CoreStore },
+  options?: { core?: CoreStore; plugins?: Plugin[] },
 ) {
-  const storeHandle = createStore<T>(id, definition, options?.core)
+  const storeHandle = createStore<T>(id, definition, options)
 
   return function useStore(keyPaths: string[] = ['*']): T {
     const componentId = generateComponentId()

@@ -1,5 +1,11 @@
 # @byrding/core
 
+## 0.5.0
+
+### Minor Changes
+
+- Add per-store plugin support: pass `plugins` in `defineStore` options or as a `static plugins` class property. Per-store plugins run after global plugins for every lifecycle hook.
+
 ## 0.4.0
 
 ### Minor Changes
