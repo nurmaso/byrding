@@ -1,5 +1,11 @@
 # @byrding/core
 
+## 0.4.0
+
+### Minor Changes
+
+- `createStore` accepts optional `{ core?: CoreStore }` third argument — when provided, only that CoreStore instance's plugins run; the global singleton is bypassed for that store. Both `@byrding/react` and `@byrding/vue` `defineStore` forward the same `options`. Renames the internal `CoreStore<T>` return-type interface to `StoreHandle<T>` to avoid the class/interface naming collision.
+
 ## 0.3.0
 
 ### Minor Changes
@@ -28,4 +34,8 @@
 
   Introduces a thin `bindTarget` proxy for class stores: a wrapper over `_proxy` that intercepts reads of computed keys and routes them through `_getterFns`, while all state reads and writes still flow through `_proxy` and its notification traps.
 
-  Closure-style stores are unaffected — their getters reference the closure variable directly and never go through `_proxy` for computed key reads.
+## 0.1.0
+
+### Minor Changes
+
+- Initial implementation of @byrding/core

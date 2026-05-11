@@ -14,11 +14,11 @@ export { subscribe, notify } from './subscriptions.js'
 // Store registry
 export { storeRegistry } from './registry.js'
 
+// Plugin system — global CoreStore singleton and configuration
+export { CoreStore, coreStore, configureByrding } from './coreStore.js'
+
 // Core primitive — used by framework adapters only
 export { createStore, generateComponentId } from './createStore.js'
-
-// Plugin system
-export { CoreStore, coreStore, configureByrding } from './coreStore.js'
 
 // Devtools plugin — opt-in; tree-shaken when not registered
 export { devtoolsPlugin, installDevtoolsHook, getDevtoolsHook } from './devtoolsPlugin.js'

@@ -26,15 +26,16 @@
  */
 
 import { shallowReactive, onUnmounted, getCurrentInstance } from 'vue'
-import { createStore, generateComponentId, getDevtoolsHook } from '@byrding/core'
+import { createStore, generateComponentId, getDevtoolsHook, type CoreStore } from '@byrding/core'
 
 // ─── defineStore ─────────────────────────────────────────────────────────────
 
 export function defineStore<T extends Record<string, unknown>>(
   id: string,
   definition: (new () => T) | (() => T),
+  options?: { core?: CoreStore },
 ) {
-  const coreStore = createStore<T>(id, definition)
+  const storeHandle = createStore<T>(id, definition, options)
 
   return function useStore(keyPaths: string[] = ['*']): T {
     const componentId = generateComponentId()
@@ -49,7 +50,7 @@ export function defineStore<T extends Record<string, unknown>>(
 
     let renderCount = 0
 
-    const reactiveStore = shallowReactive({ ...coreStore.store }) as T
+    const reactiveStore = shallowReactive({ ...storeHandle.store }) as T
 
     const syncStore = () => {
       renderCount++
@@ -61,10 +62,10 @@ export function defineStore<T extends Record<string, unknown>>(
         renderCount,
         timestamp: Date.now(),
       })
-      Object.assign(reactiveStore as Record<string, unknown>, coreStore.store)
+      Object.assign(reactiveStore as Record<string, unknown>, storeHandle.store)
     }
 
-    const unsubscribe = coreStore.subscribe(componentId, keyPaths, syncStore)
+    const unsubscribe = storeHandle.subscribe(componentId, keyPaths, syncStore)
 
     hook?.emit({
       type: 'component:mounted',

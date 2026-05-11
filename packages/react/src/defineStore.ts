@@ -28,7 +28,7 @@
 
 import { useRef } from 'react'
 import { useSyncExternalStore } from 'react'
-import { createStore, generateComponentId, getDevtoolsHook } from '@byrding/core'
+import { createStore, generateComponentId, getDevtoolsHook, type CoreStore } from '@byrding/core'
 
 // ─── Component name inference ─────────────────────────────────────────────────
 
@@ -62,8 +62,9 @@ function inferComponentName(): string | undefined {
 export function defineStore<T extends Record<string, unknown>>(
   id: string,
   definition: (new () => T) | (() => T),
+  options?: { core?: CoreStore },
 ) {
-  const coreStore = createStore<T>(id, definition)
+  const storeHandle = createStore<T>(id, definition, options)
 
   return function useStore(keyPaths: string[] = ['*']): T {
     const componentIdRef = useRef<string | null>(null)
@@ -113,7 +114,7 @@ export function defineStore<T extends Record<string, unknown>>(
         onStoreChange()
       }
 
-      const unsubscribe = coreStore.subscribe(componentId, keyPaths, trackedCallback)
+      const unsubscribe = storeHandle.subscribe(componentId, keyPaths, trackedCallback)
 
       return () => {
         unsubscribe()
@@ -128,10 +129,10 @@ export function defineStore<T extends Record<string, unknown>>(
 
     useSyncExternalStore(
       subscribeRef.current,
-      coreStore.getSnapshot,
-      coreStore.getSnapshot,
+      storeHandle.getSnapshot,
+      storeHandle.getSnapshot,
     )
 
-    return coreStore.store
+    return storeHandle.store
   }
 }
