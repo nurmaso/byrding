@@ -1,5 +1,16 @@
 # @byrding/core
 
+## 0.5.0
+
+### Minor Changes
+
+- feat: per-store plugin support in store definitions
+
+  - Class-style stores can declare `static plugins = [myPlugin()]` on the class constructor
+  - Closure-style stores can include a `plugins: [myPlugin()]` key on the returned object (removed before classify so it is never treated as reactive state)
+  - Per-store plugins run after global CoreStore plugins for every hook: `onInit`, `onStateChange`, `onAction`
+  - Adds `_localPlugins: Plugin[]` to `StoreInstance`
+
 ## 0.4.0
 
 ### Minor Changes

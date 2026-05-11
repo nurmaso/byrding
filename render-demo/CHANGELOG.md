@@ -1,5 +1,13 @@
 # @byrding/render-demo
 
+## 0.0.5
+
+### Patch Changes
+
+- Updated dependencies
+  - @byrding/core@0.5.0
+  - @byrding/react@0.2.1
+
 ## 0.0.4
 
 ### Patch Changes
