@@ -1,8 +1,12 @@
 import type { Plugin } from './types.js'
 
-class CoreStore {
+export class CoreStore {
   private _plugins: Plugin[] = []
   private _initialized = false
+
+  constructor({ plugins = [] }: { plugins?: Plugin[] } = {}) {
+    for (const p of plugins) this._plugins.push(p)
+  }
 
   get initialized(): boolean {
     return this._initialized
