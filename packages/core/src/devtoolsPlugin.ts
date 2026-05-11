@@ -1,13 +1,4 @@
-/**
- * devtools-hook.ts
- *
- * Installs `window.__BYRDING_DEVTOOLS__` in non-production environments.
- * The devtools panel connects to this hook to receive store events.
- * Framework adapters emit component lifecycle events through the same hook.
- *
- * Only active in browser environments (`window` must be defined).
- * A no-op when no devtools panel is connected.
- */
+import type { PluginFactory } from './types.js'
 
 // ─── Event payloads ──────────────────────────────────────────────────────────
 
@@ -92,14 +83,10 @@ export interface ByrdingDevtoolsHook {
 
 type DevtoolsWindow = typeof globalThis & { __BYRDING_DEVTOOLS__?: ByrdingDevtoolsHook }
 
-// ─── Install / access ─────────────────────────────────────────────────────────
-
 function createHook(): ByrdingDevtoolsHook {
   const handlers = new Set<(event: DevtoolsEvent) => void>()
   return {
-    emit(event) {
-      handlers.forEach((h) => h(event))
-    },
+    emit(event) { handlers.forEach((h) => h(event)) },
     on(handler) {
       handlers.add(handler)
       return () => handlers.delete(handler)
@@ -107,10 +94,6 @@ function createHook(): ByrdingDevtoolsHook {
   }
 }
 
-/**
- * Install the global hook. Safe to call multiple times — subsequent calls
- * are no-ops. Called automatically at `@byrding/core` module load time.
- */
 export function installDevtoolsHook(): void {
   if (typeof window === 'undefined') return
   const w = window as DevtoolsWindow
@@ -118,11 +101,54 @@ export function installDevtoolsHook(): void {
   w.__BYRDING_DEVTOOLS__ = createHook()
 }
 
-/**
- * Returns the installed hook, or `null` if running in production or on the
- * server. Framework adapters use this to emit component events.
- */
 export function getDevtoolsHook(): ByrdingDevtoolsHook | null {
   if (typeof window === 'undefined') return null
   return (window as DevtoolsWindow).__BYRDING_DEVTOOLS__ ?? null
+}
+
+// ─── Plugin factory ───────────────────────────────────────────────────────────
+//
+// Note (v1 gaps):
+//   - store:init emits stateKeys derived from the snapshot; actionKeys and
+//     computedKeys are unavailable via the Plugin interface and emitted as [].
+//   - action:after is not emittable because onAction fires before the action
+//     runs and does not receive the return value. Omitted in v1.
+
+export const devtoolsPlugin: PluginFactory = () => {
+  installDevtoolsHook()
+
+  return {
+    onInit(storeId, snapshot) {
+      getDevtoolsHook()?.emit({
+        type: 'store:init',
+        storeId,
+        state: snapshot as Record<string, unknown>,
+        stateKeys: Object.keys(snapshot),
+        actionKeys: [],
+        computedKeys: [],
+        timestamp: Date.now(),
+      })
+    },
+
+    onStateChange(storeId, path, next, prev) {
+      getDevtoolsHook()?.emit({
+        type: 'state:change',
+        storeId,
+        keyPath: path,
+        newValue: next,
+        oldValue: prev,
+        timestamp: Date.now(),
+      })
+    },
+
+    onAction(storeId, actionName, args) {
+      getDevtoolsHook()?.emit({
+        type: 'action:before',
+        storeId,
+        action: actionName,
+        args,
+        timestamp: Date.now(),
+      })
+    },
+  }
 }
