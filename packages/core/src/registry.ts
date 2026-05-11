@@ -7,4 +7,5 @@
  */
 import type { StoreInstance } from './types.js';
 
-export const storeRegistry = new Map<string, StoreInstance>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const storeRegistry = new Map<string, StoreInstance<any, any>>();

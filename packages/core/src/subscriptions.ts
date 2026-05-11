@@ -19,7 +19,7 @@ import { normaliseKeyPath } from './proxy.js'
  * Returns an unsubscribe function that removes the subscriber cleanly.
  */
 export function subscribe(
-  store: StoreInstance,
+  store: StoreInstance<any, any>,
   componentId: string,
   keyPaths: string[],
   callback: () => void,
@@ -59,7 +59,7 @@ export function subscribe(
  *
  * Array-specific paths are normalised first (e.g. `"items.0"` → `"items"`).
  */
-export function notify(store: StoreInstance, rawKeyPath: string): void {
+export function notify(store: StoreInstance<any, any>, rawKeyPath: string): void {
   const keyPath = normaliseKeyPath(rawKeyPath)
   const toNotify = new Set<string>()
 

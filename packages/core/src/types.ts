@@ -4,13 +4,31 @@
  * Shared TypeScript types for @byrding/core.
  *
  * `StoreInstance` is the internal representation of a registered store.
- * Framework adapters consume only `CoreStore<T>` — the public surface that
+ * Framework adapters consume only `StoreHandle<T>` — the public surface that
  * `createStore` returns.
  */
 
+// ─── Type helpers ─────────────────────────────────────────────────────────────
+
+/** Extract the non-function (state) properties of T. */
+export type StateOf<T> = {
+  [K in keyof T as T[K] extends Function ? never : K]: T[K]
+}
+
+/** Extract the function (action) properties of T. */
+export type ActionsOf<T> = {
+  [K in keyof T as T[K] extends Function ? K : never]: T[K]
+}
+
+/** Merge state, actions, and computed into the flat consumer-facing type. */
+export type MergedStore<S, A, C = Record<never, never>> = S & A & C
+
 // ─── Internal store shape ────────────────────────────────────────────────────
 
-export interface StoreInstance {
+export interface StoreInstance<
+  TState extends Record<string, unknown> = Record<string, unknown>,
+  TActions extends Record<string, unknown> = Record<string, unknown>,
+> {
   /** Unique name registered in the store registry. */
   id: string
 
@@ -18,7 +36,7 @@ export interface StoreInstance {
    * Raw state values — plain object, no proxy.
    * `getSnapshot()` spreads this to produce a stable snapshot reference.
    */
-  _raw: Record<string, unknown>
+  _raw: TState
 
   /**
    * Reactive surface:
@@ -37,8 +55,8 @@ export interface StoreInstance {
   /** Getter functions, each bound to `_proxy`. */
   _getterFns: Record<string, () => unknown>
 
-  /** Action functions, each bound to `_proxy`. */
-  _actionFns: Record<string, (...args: unknown[]) => unknown>
+  /** Action functions, each bound to `_proxy` and typed against TActions. */
+  _actionFns: TActions
 
   /**
    * Update map — `keyPath → Set<componentId>`.
@@ -54,7 +72,7 @@ export interface StoreInstance {
 
   /**
    * Fires subscriber callbacks for the given key path.
-   * `oldValue` and `newValue` are forwarded to the devtools hook for
+   * `oldValue` and `newValue` are forwarded to plugin hooks for
    * state:change events; they are not used by the subscription system itself.
    */
   _notify: (keyPath: string, oldValue?: unknown, newValue?: unknown) => void
@@ -107,10 +125,10 @@ export interface StoreHandle<T> {
   ) => () => void
 
   /**
-   * Returns a shallow copy of raw state.  Used by React's
-   * `useSyncExternalStore` to detect whether a re-render is needed.
-   * Returns the same cached reference between mutations; a new object on
-   * each mutation so React detects the change.
+   * Returns a shallow copy of raw state only (no actions, no computed).
+   * Used by React's `useSyncExternalStore` to detect whether a re-render is
+   * needed. Returns the same cached reference between mutations; a new object
+   * on each mutation so React detects the change.
    */
-  getSnapshot: () => Partial<T>
+  getSnapshot: () => StateOf<T>
 }

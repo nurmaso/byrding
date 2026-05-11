@@ -34,7 +34,7 @@ import { createReactiveState, normaliseKeyPath } from './proxy.js'
 import { subscribe, notify } from './subscriptions.js'
 import { storeRegistry } from './registry.js'
 import { coreStore, CoreStore } from './coreStore.js'
-import type { StoreInstance, StoreHandle, Plugin } from './types.js'
+import type { StoreInstance, StoreHandle, StateOf, ActionsOf, Plugin } from './types.js'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -90,8 +90,12 @@ function buildMergedStore<T>(store: StoreInstance): T {
 // ─── Core primitive ──────────────────────────────────────────────────────────
 
 /**
- * Create (or retrieve) the store for `id` and return a `StoreHandle<T>` that
+ * Create (or retrieve) the store for `id` and return a `StoreHandle` that
  * framework adapters can consume.
+ *
+ * Two overloads allow TypeScript to infer state and action types precisely:
+ *   - Class constructor → `StateOf<InstanceType<C>> & ActionsOf<InstanceType<C>>`
+ *   - Factory function  → `T` (the factory's return type, already merged)
  *
  * @param id         Unique store name.
  * @param definition A class constructor **or** a factory function.
@@ -99,11 +103,27 @@ function buildMergedStore<T>(store: StoreInstance): T {
  *                   instead of the global singleton — global plugins will NOT
  *                   run for this store.
  */
+export function createStore<C extends new () => object>(
+  id: string,
+  definition: C,
+  options?: { core?: CoreStore },
+): StoreHandle<StateOf<InstanceType<C>> & ActionsOf<InstanceType<C>>>
+export function createStore<T extends Record<string, unknown>>(
+  id: string,
+  definition: () => T,
+  options?: { core?: CoreStore },
+): StoreHandle<T>
 export function createStore<T extends Record<string, unknown>>(
   id: string,
   definition: (new () => T) | (() => T),
   options?: { core?: CoreStore },
-): StoreHandle<T> {
+): StoreHandle<T>
+export function createStore<T extends Record<string, unknown>>(
+  id: string,
+  definition: (new () => T) | (() => T),
+  options?: { core?: CoreStore },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): StoreHandle<any> {
 
   // Always mark the global singleton as initialized so configureByrding throws
   // if called after any store has been created — even stores using an injected core.
@@ -138,15 +158,16 @@ export function createStore<T extends Record<string, unknown>>(
     const hasProto = proto && proto !== Object.prototype
 
     // Placeholder; filled below.
-    const storeInstance: StoreInstance = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const storeInstance: StoreInstance<StateOf<T>, ActionsOf<T>> = {
       id,
-      _raw: {} as Record<string, unknown>,
+      _raw: {} as StateOf<T>,
       _proxy: null as unknown as Record<string, unknown>,
       _stateKeys: stateKeys,
       _actionKeys: actionKeys,
       _computedKeys: computedKeys,
       _getterFns: {},
-      _actionFns: {},
+      _actionFns: {} as ActionsOf<T>,
       _updateMap: new Map(),
       _callbackMap: new Map(),
       _notify: (keyPath, _oldValue, _newValue) => notify(storeInstance, keyPath),
@@ -155,9 +176,9 @@ export function createStore<T extends Record<string, unknown>>(
 
     if (usingClass) {
       // ── Class strategy: Proxy over a plain _raw copy ───────────────────────
-      const raw: Record<string, unknown> = {}
+      const raw = {} as StateOf<T>
       for (const key of stateKeys) {
-        raw[key] = (instance as Record<string, unknown>)[key]
+        (raw as Record<string, unknown>)[key] = (instance as Record<string, unknown>)[key]
       }
       storeInstance._raw = raw
       storeInstance._proxy = createReactiveState(raw, (path) => storeInstance._notify(path))
@@ -171,16 +192,16 @@ export function createStore<T extends Record<string, unknown>>(
       // from / writes to a plain `raw` values map and calls `_notify`.
       // `_raw` = the plain values map (used for getSnapshot).
       // `_proxy` = the instrumented instance (used for action/getter binding).
-      const raw: Record<string, unknown> = {}
+      const raw = {} as StateOf<T>
       const inst = instance as Record<string, unknown>
 
       for (const key of stateKeys) {
-        raw[key] = inst[key]
+        (raw as Record<string, unknown>)[key] = inst[key]
         Object.defineProperty(inst, key, {
-          get: () => raw[key],
+          get: () => (raw as Record<string, unknown>)[key],
           set: (v: unknown) => {
-            const oldValue = raw[key]
-            raw[key] = v
+            const oldValue = (raw as Record<string, unknown>)[key]
+            ;(raw as Record<string, unknown>)[key] = v
             storeInstance._notify(key, oldValue, v)
           },
           enumerable: true,
@@ -225,7 +246,7 @@ export function createStore<T extends Record<string, unknown>>(
         ? (Object.getOwnPropertyDescriptor(proto, key)?.value ??
           (instance as Record<string, unknown>)[key])
         : (instance as Record<string, unknown>)[key]
-      storeInstance._actionFns[key] = (fn as (...a: unknown[]) => unknown).bind(
+      ;(storeInstance._actionFns as Record<string, unknown>)[key] = (fn as (...a: unknown[]) => unknown).bind(
         bindTarget,
       )
     }
@@ -263,7 +284,7 @@ export function createStore<T extends Record<string, unknown>>(
   const store = storeRegistry.get(id)!
 
   const originalNotify = store._notify
-  let _snapshotCache: Partial<T> | null = null
+  let _snapshotCache: Record<string, unknown> | null = null
   store._notify = (keyPath: string, oldValue?: unknown, newValue?: unknown) => {
     _snapshotCache = null
     activeCore.runOnStateChange(id, normaliseKeyPath(keyPath), newValue, oldValue)
@@ -289,9 +310,10 @@ export function createStore<T extends Record<string, unknown>>(
       return subscribe(store, componentId, keyPaths, callback)
     },
 
-    getSnapshot() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    getSnapshot(): any {
       if (!_snapshotCache) {
-        _snapshotCache = { ...store._raw } as Partial<T>
+        _snapshotCache = { ...store._raw }
       }
       return _snapshotCache
     },
