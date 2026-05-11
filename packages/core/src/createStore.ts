@@ -34,8 +34,8 @@ import { createReactiveState, normaliseKeyPath } from './proxy.js'
 import { subscribe, notify } from './subscriptions.js'
 import { storeRegistry } from './registry.js'
 import { installDevtoolsHook, getDevtoolsHook } from './devtools-hook.js'
-import { coreStore as globalCore, type CoreStore } from './coreStore.js'
-import type { StoreInstance, StoreHandle } from './types.js'
+import { coreStore as globalCore, CoreStore } from './coreStore.js'
+import type { StoreInstance, StoreHandle, Plugin } from './types.js'
 
 // Install the global hook as soon as the core module is loaded.
 installDevtoolsHook()
@@ -103,11 +103,15 @@ function buildMergedStore<T>(store: StoreInstance): T {
 export function createStore<T extends Record<string, unknown>>(
   id: string,
   definition: (new () => T) | (() => T),
-  core?: CoreStore,
+  options?: { core?: CoreStore; plugins?: Plugin[] },
 ): StoreHandle<T> {
 
   globalCore.markInitialized()
-  const activeCore = core ?? globalCore
+  const activeCore = options?.core ?? globalCore
+
+  // Per-store plugins: static class property (class style) + options.plugins (both styles)
+  const staticPlugins = ((definition as unknown) as { plugins?: Plugin[] }).plugins ?? []
+  const localCore = new CoreStore({ plugins: [...staticPlugins, ...(options?.plugins ?? [])] })
 
   // ── Lazy singleton initialisation ─────────────────────────────────────────
   if (!storeRegistry.has(id)) {
@@ -234,6 +238,7 @@ export function createStore<T extends Record<string, unknown>>(
 
     storeRegistry.set(id, storeInstance)
     activeCore.runOnInit(id, { ...storeInstance._raw })
+    localCore.runOnInit(id, { ...storeInstance._raw })
   }
 
   // ── Snapshot caching + devtools wiring ───────────────────────────────────
@@ -272,6 +277,7 @@ export function createStore<T extends Record<string, unknown>>(
       timestamp: Date.now(),
     })
     activeCore.runOnStateChange(id, normaliseKeyPath(keyPath), newValue, oldValue)
+    localCore.runOnStateChange(id, normaliseKeyPath(keyPath), newValue, oldValue)
     originalNotify(keyPath, oldValue, newValue)
   }
 
@@ -300,6 +306,7 @@ export function createStore<T extends Record<string, unknown>>(
     const original = store._actionFns[key]
     store._actionFns[key] = (...args: unknown[]) => {
       activeCore.runOnAction(id, key, args)
+      localCore.runOnAction(id, key, args)
       return original(...args)
     }
   }
