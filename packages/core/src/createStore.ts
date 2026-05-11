@@ -34,7 +34,8 @@ import { createReactiveState, normaliseKeyPath } from './proxy.js'
 import { subscribe, notify } from './subscriptions.js'
 import { storeRegistry } from './registry.js'
 import { installDevtoolsHook, getDevtoolsHook } from './devtools-hook.js'
-import type { StoreInstance, CoreStore } from './types.js'
+import { coreStore as globalCore, type CoreStore } from './coreStore.js'
+import type { StoreInstance, StoreHandle } from './types.js'
 
 // Install the global hook as soon as the core module is loaded.
 installDevtoolsHook()
@@ -102,7 +103,11 @@ function buildMergedStore<T>(store: StoreInstance): T {
 export function createStore<T extends Record<string, unknown>>(
   id: string,
   definition: (new () => T) | (() => T),
-): CoreStore<T> {
+  core?: CoreStore,
+): StoreHandle<T> {
+
+  globalCore.markInitialized()
+  const activeCore = core ?? globalCore
 
   // ── Lazy singleton initialisation ─────────────────────────────────────────
   if (!storeRegistry.has(id)) {
@@ -228,6 +233,7 @@ export function createStore<T extends Record<string, unknown>>(
     }
 
     storeRegistry.set(id, storeInstance)
+    activeCore.runOnInit(id, { ...storeInstance._raw })
   }
 
   // ── Snapshot caching + devtools wiring ───────────────────────────────────
@@ -265,6 +271,7 @@ export function createStore<T extends Record<string, unknown>>(
       newValue,
       timestamp: Date.now(),
     })
+    activeCore.runOnStateChange(id, normaliseKeyPath(keyPath), newValue, oldValue)
     originalNotify(keyPath, oldValue, newValue)
   }
 
@@ -286,6 +293,14 @@ export function createStore<T extends Record<string, unknown>>(
         }
         return result
       }
+    }
+  }
+
+  for (const key of store._actionKeys) {
+    const original = store._actionFns[key]
+    store._actionFns[key] = (...args: unknown[]) => {
+      activeCore.runOnAction(id, key, args)
+      return original(...args)
     }
   }
 

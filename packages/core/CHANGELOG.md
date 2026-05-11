@@ -1,5 +1,17 @@
 # @byrding/core
 
+## 0.4.0
+
+### Minor Changes
+
+- Export `CoreStore` class for multi-core isolation; add optional `{ core }` option to `defineStore` in React and Vue adapters. Rename internal `CoreStore<T>` interface to `StoreHandle<T>` to resolve naming conflict.
+
+## 0.3.0
+
+### Minor Changes
+
+- Add global `CoreStore` singleton with plugin registry: `configureByrding({ plugins })` for one-time setup and `coreStore.use()` for dynamic registration. Plugin hooks (`onInit`, `onStateChange`, `onAction`, `onDispose`) are invoked automatically by `createStore`.
+
 ## 0.2.0
 
 ### Minor Changes

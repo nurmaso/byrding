@@ -1,5 +1,5 @@
 // Types (consumed by framework adapters)
-export type { StoreInstance, CoreStore, Plugin, PluginFactory } from './types.js'
+export type { StoreInstance, StoreHandle, Plugin, PluginFactory } from './types.js'
 
 // Classification
 export { classify } from './classify.js'
@@ -16,6 +16,9 @@ export { storeRegistry } from './registry.js'
 
 // Core primitive — used by framework adapters only
 export { createStore, generateComponentId } from './createStore.js'
+
+// Plugin system
+export { CoreStore, coreStore, configureByrding } from './coreStore.js'
 
 // Devtools hook — consumed by framework adapters and the devtools panel
 export { installDevtoolsHook, getDevtoolsHook } from './devtools-hook.js'
