@@ -82,7 +82,7 @@ export type PluginFactory<S extends Record<string, unknown> = Record<string, unk
  * App developers never import from `@byrding/core` — they use the framework
  * package's `defineStore` exclusively.
  */
-export interface CoreStore<T> {
+export interface StoreHandle<T> {
   /** The flat merged store object — state, computed, and actions top-level. */
   store: T
 

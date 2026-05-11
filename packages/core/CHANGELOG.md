@@ -1,5 +1,11 @@
 # @byrding/core
 
+## 0.3.0
+
+### Minor Changes
+
+- Migrate devtools to an opt-in `devtoolsPlugin()` using the Plugin interface. Add `CoreStore` singleton, `coreStore`, and `configureByrding()` for global plugin registration. Remove auto-installed devtools hook — wire via `configureByrding({ plugins: [devtoolsPlugin()] })` to opt in. Rename internal `CoreStore<T>` interface to `StoreHandle<T>`.
+
 ## 0.2.0
 
 ### Minor Changes
