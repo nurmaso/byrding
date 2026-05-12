@@ -1,5 +1,14 @@
 # @byrding/playground
 
+## 0.0.6
+
+### Patch Changes
+
+- Updated dependencies
+  - @byrding/core@0.6.0
+  - @byrding/react@0.2.2
+  - @byrding/vue@0.2.2
+
 ## 0.0.5
 
 ### Patch Changes
