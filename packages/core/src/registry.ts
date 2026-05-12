@@ -7,5 +7,9 @@
  */
 import type { StoreInstance } from './types.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const storeRegistry = new Map<string, StoreInstance<any, any>>();
+export const storeRegistry = new Map<string, StoreInstance>();
+
+/** @testonly Clears all registered stores. Call in beforeEach to prevent state leaking between tests. */
+export function resetRegistry(): void {
+  storeRegistry.clear()
+}
