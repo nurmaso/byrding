@@ -8,3 +8,8 @@
 import type { StoreInstance } from './types.js';
 
 export const storeRegistry = new Map<string, StoreInstance>();
+
+/** @testonly Clears all registered stores. Call in beforeEach to prevent state leaking between tests. */
+export function resetRegistry(): void {
+  storeRegistry.clear()
+}

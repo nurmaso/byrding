@@ -12,7 +12,7 @@ export { createReactiveState, normaliseKeyPath } from './proxy.js'
 export { subscribe, notify } from './subscriptions.js'
 
 // Store registry
-export { storeRegistry } from './registry.js'
+export { storeRegistry, resetRegistry } from './registry.js'
 
 // Plugin system — global CoreStore singleton and configuration
 export { CoreStore, coreStore, configureByrding } from './coreStore.js'
