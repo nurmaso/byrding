@@ -1,5 +1,17 @@
 # @byrding/core
 
+## 0.6.0
+
+### Minor Changes
+
+- feat(core): split StoreInstance into typed TState/TActions generics
+
+  - Exports `StateOf<T>`, `ActionsOf<T>`, and `MergedStore<S, A, C>` type helpers
+  - `StoreInstance<TState, TActions>` now carries `_raw: TState` and `_actionFns: TActions` instead of untyped Record shapes
+  - `StoreHandle.getSnapshot()` returns `StateOf<T>` (state only) instead of `Partial<T>` (mixed state + actions)
+  - `createStore` gains two typed overloads — class constructor infers `StateOf<InstanceType<C>> & ActionsOf<InstanceType<C>>`; factory infers the return type directly; union overload preserved for framework adapters
+  - Zero runtime behaviour changes — type layer only
+
 ## 0.5.0
 
 ### Minor Changes
