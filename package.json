@@ -4,6 +4,7 @@
   "version": "0.0.3",
   "scripts": {
     "build": "pnpm -r --filter \"./packages/*\" build",
+    "test": "pnpm -r --filter \"./packages/*\" test",
     "dev:render-demo": "pnpm --filter @byrding/render-demo dev",
     "docs:dev": "pnpm --filter @byrding/docs dev",
     "docs:build": "pnpm --filter @byrding/docs build",
@@ -11,7 +12,8 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
-    "typescript": "^5.0.2"
+    "typescript": "^5.0.2",
+    "vitest": "^2.0.0"
   },
   "packageManager": "pnpm@9.0.0"
 }

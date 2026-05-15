@@ -293,12 +293,13 @@ export function createStore<T extends Record<string, unknown>>(
   }
 
   for (const key of store._actionKeys) {
-    const original = store._actionFns[key]
-    store._actionFns[key] = (...args: unknown[]) => {
+    const original = store._actionFns[key] as (...args: unknown[]) => unknown
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    store._actionFns[key] = ((...args: unknown[]) => {
       activeCore.runOnAction(id, key, args)
       for (const p of store._localPlugins) p.onAction?.(id, key, args)
       return original(...args)
-    }
+    }) as any
   }
 
   const mergedStore = buildMergedStore<T>(store)

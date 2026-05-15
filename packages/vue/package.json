@@ -1,6 +1,6 @@
 {
   "name": "@byrding/vue",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Vue 3 adapter for @byrding/core — defineStore returns a composable via shallowReactive",
   "type": "module",
   "main": "./dist/index.js",
@@ -17,6 +17,7 @@
   ],
   "scripts": {
     "build": "tsc --project tsconfig.json",
+    "test": "vitest run",
     "prepublishOnly": "pnpm run build"
   },
   "repository": {
@@ -35,7 +36,10 @@
     "vue": ">=3.0.0"
   },
   "devDependencies": {
+    "@vue/test-utils": "^2.4.0",
+    "jsdom": "^25.0.0",
     "typescript": "^5.0.2",
+    "vitest": "^2.0.0",
     "vue": "^3.4.0"
   }
 }
