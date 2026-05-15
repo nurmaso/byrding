@@ -20,6 +20,10 @@ export { CoreStore, coreStore, configureByrding } from './coreStore.js'
 // Core primitive — used by framework adapters only
 export { createStore, generateComponentId } from './createStore.js'
 
+// State watcher — vanilla-JS utility for observing individual state keys
+export { watchState } from './watch.js'
+export type { StateWatcher } from './watch.js'
+
 // Devtools plugin — opt-in; tree-shaken when not registered
 export { devtoolsPlugin, installDevtoolsHook, getDevtoolsHook } from './devtoolsPlugin.js'
 export type {

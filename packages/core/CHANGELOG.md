@@ -1,5 +1,11 @@
 # @byrding/core
 
+## 0.7.0
+
+### Minor Changes
+
+- Add watchState() — vanilla-JS utility for observing individual state keys with getter/setter/unwatch handle.
+
 ## 0.6.1
 
 ### Patch Changes
