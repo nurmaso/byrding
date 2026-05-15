@@ -1,5 +1,6 @@
-import { useEffect, useReducer, useState } from 'react'
+import { useEffect, useReducer, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
+import { Breakpoint, BreakpointsTab } from './panel/Breakpoints'
 
 // ─── Event types (mirrors devtoolsPlugin.ts from @byrding/core) ───────────────
 
@@ -117,9 +118,11 @@ interface PanelState {
   actionLog: ActionEntry[]
   components: Record<string, ComponentEntry>
   selectedStoreId: string | null
-  activeTab: 'inspector' | 'actions' | 'components'
+  activeTab: 'inspector' | 'actions' | 'components' | 'breakpoints'
   selectedActionId: number | null
   flashPaths: Record<string, string[]>
+  breakpoints: Breakpoint[]
+  bpErrors: Record<string, string>
 }
 
 type PanelAction =
@@ -130,6 +133,12 @@ type PanelAction =
   | { type: 'set_tab'; tab: PanelState['activeTab'] }
   | { type: 'select_action'; actionId: number | null }
   | { type: 'flash_done'; storeId: string; keyPath: string }
+  | { type: 'bp_add'; bp: Breakpoint }
+  | { type: 'bp_remove'; id: string }
+  | { type: 'bp_toggle'; id: string }
+  | { type: 'bp_deactivate_all' }
+  | { type: 'bp_reactivate_all' }
+  | { type: 'bp_error'; bpId: string; message: string }
 
 function makeInitialState(): PanelState {
   return {
@@ -142,6 +151,8 @@ function makeInitialState(): PanelState {
     activeTab: 'inspector',
     selectedActionId: null,
     flashPaths: {},
+    breakpoints: [],
+    bpErrors: {},
   }
 }
 
@@ -264,6 +275,11 @@ function handleEvent(state: PanelState, event: DevtoolsEvent): PanelState {
       }
     }
 
+    case 'byrding:bp:error': {
+      const { bpId, message } = event as { type: string; bpId: string; message: string }
+      return { ...state, bpErrors: { ...state.bpErrors, [bpId]: message as string } }
+    }
+
     default:
       return state
   }
@@ -276,7 +292,13 @@ function reducer(state: PanelState, action: PanelAction): PanelState {
     case 'devtools_event':
       return handleEvent(state, action.event)
     case 'clear':
-      return { ...makeInitialState(), connected: state.connected }
+      // Preserve breakpoints across clears; they are managed independently
+      return {
+        ...makeInitialState(),
+        connected: state.connected,
+        breakpoints: state.breakpoints.map((bp) => ({ ...bp, active: false })),
+        bpErrors: {},
+      }
     case 'select_store':
       return { ...state, selectedStoreId: action.storeId, selectedActionId: null }
     case 'set_tab':
@@ -293,20 +315,79 @@ function reducer(state: PanelState, action: PanelAction): PanelState {
         },
       }
     }
+    case 'bp_add':
+      return { ...state, breakpoints: [...state.breakpoints, action.bp] }
+    case 'bp_remove':
+      return {
+        ...state,
+        breakpoints: state.breakpoints.filter((bp) => bp.id !== action.id),
+        bpErrors: Object.fromEntries(
+          Object.entries(state.bpErrors).filter(([k]) => k !== action.id),
+        ),
+      }
+    case 'bp_toggle':
+      return {
+        ...state,
+        breakpoints: state.breakpoints.map((bp) =>
+          bp.id === action.id ? { ...bp, active: !bp.active } : bp,
+        ),
+      }
+    case 'bp_deactivate_all':
+      return {
+        ...state,
+        breakpoints: state.breakpoints.map((bp) => ({ ...bp, active: false })),
+      }
+    case 'bp_reactivate_all':
+      return {
+        ...state,
+        breakpoints: state.breakpoints.map((bp) => ({ ...bp, active: true })),
+        bpErrors: {},
+      }
+    case 'bp_error':
+      return { ...state, bpErrors: { ...state.bpErrors, [action.bpId]: action.message } }
   }
 }
+
+const STORAGE_KEY_PREFIX = 'byrding:bp:'
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 
 function App() {
   const [state, dispatch] = useReducer(reducer, null, makeInitialState)
+  const portRef = useRef<chrome.runtime.Port | null>(null)
+  const breakpointsRef = useRef<Breakpoint[]>([])
+  breakpointsRef.current = state.breakpoints
+  const tabId = chrome.devtools.inspectedWindow.tabId
+
+  function sendToPage(msg: Record<string, unknown>) {
+    portRef.current?.postMessage(msg)
+  }
 
   useEffect(() => {
-    function checkConnection() {
+    // Load persisted breakpoints for this tab
+    chrome.storage.local.get(STORAGE_KEY_PREFIX + tabId, (result) => {
+      const stored = result[STORAGE_KEY_PREFIX + tabId] as Breakpoint[] | undefined
+      if (stored?.length) {
+        for (const bp of stored) {
+          dispatch({ type: 'bp_add', bp: { ...bp, active: false } })
+        }
+      }
+    })
+  }, [tabId])
+
+  useEffect(() => {
+    // Persist breakpoints to storage whenever they change
+    chrome.storage.local.set({ [STORAGE_KEY_PREFIX + tabId]: state.breakpoints })
+  }, [state.breakpoints, tabId])
+
+  useEffect(() => {
+    function checkConnection(onConnected?: () => void) {
       chrome.devtools.inspectedWindow.eval(
         "typeof window.__BYRDING_DEVTOOLS__ !== 'undefined'",
         (result: unknown) => {
-          dispatch({ type: 'set_connected', connected: result === true })
+          const connected = result === true
+          dispatch({ type: 'set_connected', connected })
+          if (connected) onConnected?.()
         },
       )
     }
@@ -314,6 +395,7 @@ function App() {
     checkConnection()
 
     const port = chrome.runtime.connect({ name: 'byrding:devtools' })
+    portRef.current = port
     port.postMessage({ type: 'byrding:init', tabId: chrome.devtools.inspectedWindow.tabId })
 
     port.onMessage.addListener((event: DevtoolsEvent) => {
@@ -324,17 +406,35 @@ function App() {
           dispatch({ type: 'flash_done', storeId: e.storeId, keyPath: e.keyPath })
         }, FLASH_DURATION_MS)
       }
+      if (event.type === 'byrding:bp:error') {
+        const e = event as { type: string; bpId: string; message: string }
+        dispatch({ type: 'bp_error', bpId: e.bpId, message: e.message })
+      }
     })
 
     function onNavigated() {
       dispatch({ type: 'clear' })
-      setTimeout(checkConnection, 500)
+      // Clear injected script breakpoints; they will be re-registered on reconnect
+      port.postMessage({ type: 'byrding:bp:clear' })
+      setTimeout(
+        () =>
+          checkConnection(() => {
+            // Re-activate all breakpoints after reconnection
+            dispatch({ type: 'bp_reactivate_all' })
+            // Re-send each breakpoint via ref to avoid stale closure
+            for (const bp of breakpointsRef.current) {
+              port.postMessage({ type: 'byrding:bp:add', config: { ...bp, active: true } })
+            }
+          }),
+        500,
+      )
     }
 
     chrome.devtools.network.onNavigated.addListener(onNavigated)
 
     return () => {
       port.disconnect()
+      portRef.current = null
       chrome.devtools.network.onNavigated.removeListener(onNavigated)
     }
   }, [])
@@ -345,6 +445,28 @@ function App() {
   const selectedAction = state.selectedActionId !== null
     ? state.actionLog.find((a) => a.id === state.selectedActionId) ?? null
     : null
+
+  function handleBpAdd(bp: Omit<Breakpoint, 'id' | 'active'>) {
+    const newBp: Breakpoint = { ...bp, id: crypto.randomUUID(), active: true }
+    dispatch({ type: 'bp_add', bp: newBp })
+    sendToPage({ type: 'byrding:bp:add', config: newBp })
+  }
+
+  function handleBpRemove(id: string) {
+    dispatch({ type: 'bp_remove', id })
+    sendToPage({ type: 'byrding:bp:remove', id })
+  }
+
+  function handleBpToggle(id: string) {
+    const bp = state.breakpoints.find((b) => b.id === id)
+    if (!bp) return
+    dispatch({ type: 'bp_toggle', id })
+    if (bp.active) {
+      sendToPage({ type: 'byrding:bp:remove', id })
+    } else {
+      sendToPage({ type: 'byrding:bp:add', config: { ...bp, active: true } })
+    }
+  }
 
   return (
     <div style={s.root}>
@@ -365,6 +487,7 @@ function App() {
             storeCount={state.storeOrder.length}
             actionCount={state.actionLog.length}
             componentCount={Object.keys(state.components).length}
+            bpCount={state.breakpoints.filter((bp) => bp.active).length}
             onSetTab={(tab) => dispatch({ type: 'set_tab', tab })}
           />
           {state.activeTab === 'inspector' && (
@@ -376,13 +499,23 @@ function App() {
               selectedActionId={state.selectedActionId}
               selectedAction={selectedAction}
               currentSnapshots={Object.fromEntries(
-                Object.entries(state.stores).map(([id, s]) => [id, s.snapshot]),
+                Object.entries(state.stores).map(([id, st]) => [id, st.snapshot]),
               )}
               onSelectAction={(id) => dispatch({ type: 'select_action', actionId: id })}
             />
           )}
           {state.activeTab === 'components' && (
             <ComponentsTab components={Object.values(state.components)} />
+          )}
+          {state.activeTab === 'breakpoints' && (
+            <BreakpointsTab
+              breakpoints={state.breakpoints}
+              bpErrors={state.bpErrors}
+              storeIds={state.storeOrder}
+              onAdd={handleBpAdd}
+              onRemove={handleBpRemove}
+              onToggle={handleBpToggle}
+            />
           )}
         </div>
       </div>
@@ -456,18 +589,21 @@ function TabBar({
   storeCount,
   actionCount,
   componentCount,
+  bpCount,
   onSetTab,
 }: {
   activeTab: PanelState['activeTab']
   storeCount: number
   actionCount: number
   componentCount: number
+  bpCount: number
   onSetTab: (tab: PanelState['activeTab']) => void
 }) {
   const tabs: { key: PanelState['activeTab']; label: string; count: number }[] = [
     { key: 'inspector', label: 'Inspector', count: storeCount },
     { key: 'actions', label: 'Actions', count: actionCount },
     { key: 'components', label: 'Components', count: componentCount },
+    { key: 'breakpoints', label: 'Breakpoints', count: bpCount },
   ]
   return (
     <div style={s.tabBar}>
