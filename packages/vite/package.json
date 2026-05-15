@@ -1,0 +1,41 @@
+{
+  "name": "@byrding/vite",
+  "version": "0.2.0",
+  "description": "Vite plugin for @byrding — writes .byrding-context.json on dev-server start",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "test": "vitest run",
+    "prepublishOnly": "pnpm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nurmaso/byrding",
+    "directory": "packages/vite"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "peerDependencies": {
+    "vite": "^4.0.0 || ^5.0.0 || ^6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^12.20.55",
+    "typescript": "^5.0.2",
+    "vite": "^5.0.0",
+    "vitest": "^2.0.0"
+  }
+}
