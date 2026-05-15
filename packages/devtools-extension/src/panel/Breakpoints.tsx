@@ -5,7 +5,7 @@ export interface Breakpoint {
   type: 'action' | 'state'
   storeId: string
   name: string
-  condition: string
+  condition?: string
   active: boolean
 }
 

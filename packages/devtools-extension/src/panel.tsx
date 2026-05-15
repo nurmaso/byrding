@@ -275,11 +275,6 @@ function handleEvent(state: PanelState, event: DevtoolsEvent): PanelState {
       }
     }
 
-    case 'byrding:bp:error': {
-      const { bpId, message } = event as { type: string; bpId: string; message: string }
-      return { ...state, bpErrors: { ...state.bpErrors, [bpId]: message as string } }
-    }
-
     default:
       return state
   }
