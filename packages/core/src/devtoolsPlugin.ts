@@ -1,3 +1,5 @@
+import { getContext } from './getContext.js'
+import type { ByrdingContext } from './getContext.js'
 import type { PluginFactory } from './types.js'
 
 // ─── Event payloads ──────────────────────────────────────────────────────────
@@ -79,6 +81,7 @@ export type DevtoolsEvent =
 export interface ByrdingDevtoolsHook {
   emit(event: DevtoolsEvent): void
   on(handler: (event: DevtoolsEvent) => void): () => void
+  getContext(): ByrdingContext
 }
 
 type DevtoolsWindow = typeof globalThis & { __BYRDING_DEVTOOLS__?: ByrdingDevtoolsHook }
@@ -91,6 +94,7 @@ function createHook(): ByrdingDevtoolsHook {
       handlers.add(handler)
       return () => handlers.delete(handler)
     },
+    getContext: () => getContext(),
   }
 }
 
