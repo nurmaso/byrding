@@ -1,5 +1,11 @@
 # @byrding/core
 
+## 0.6.1
+
+### Patch Changes
+
+- Configure vitest test runner across all packages with shared base config, framework-appropriate environments, and passing smoke tests per package.
+
 ## 0.6.0
 
 ### Minor Changes

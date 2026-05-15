@@ -1,6 +1,6 @@
 {
   "name": "@byrding/playground",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Cross-framework smoke test — CartStore shared by React and Vue",
   "private": true,
   "type": "module",

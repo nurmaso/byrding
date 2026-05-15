@@ -1,5 +1,13 @@
 # @byrding/react
 
+## 0.2.3
+
+### Patch Changes
+
+- Configure vitest test runner across all packages with shared base config, framework-appropriate environments, and passing smoke tests per package.
+- Updated dependencies
+  - @byrding/core@0.6.1
+
 ## 0.2.2
 
 ### Patch Changes
