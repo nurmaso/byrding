@@ -20,6 +20,10 @@ export { CoreStore, coreStore, configureByrding } from './coreStore.js'
 // Core primitive — used by framework adapters only
 export { createStore, generateComponentId } from './createStore.js'
 
+// LLM context snapshot — tree-shakeable
+export { getContext } from './getContext.js'
+export type { ByrdingContext, ByrdingStoreContext } from './getContext.js'
+
 // Devtools plugin — opt-in; tree-shaken when not registered
 export { devtoolsPlugin, installDevtoolsHook, getDevtoolsHook } from './devtoolsPlugin.js'
 export type {
