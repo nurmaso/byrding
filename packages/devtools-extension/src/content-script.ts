@@ -1,3 +1,7 @@
-// Stub: page bridge wiring is handled in issue #35.
-// This script runs at document_start on all pages to allow future
-// injection of the page-side event bridge.
+// Relays Byrding devtools events from the page's main world to the background
+// service worker. The injected script (running in MAIN world) posts events via
+// window.postMessage; this isolated-world script picks them up and forwards them.
+window.addEventListener('message', ({ data }: MessageEvent) => {
+  if (data?.source !== '__byrding_devtools__') return
+  chrome.runtime.sendMessage({ type: 'byrding:event', event: data.event })
+})
