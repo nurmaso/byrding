@@ -20,13 +20,16 @@ declare global {
   }
 }
 
-export const storeRegistry: Map<string, StoreInstance> =
-  (import.meta.hot?.data['storeRegistry'] as Map<string, StoreInstance> | undefined)
-  ?? new Map<string, StoreInstance>()
-
-if (import.meta.hot) {
-  import.meta.hot.data['storeRegistry'] = storeRegistry
+/** @internal Extracted for unit-testability without a live Vite dev server. */
+export function _buildRegistry(hotData?: Record<string, unknown>): Map<string, StoreInstance> {
+  const registry =
+    (hotData?.['storeRegistry'] as Map<string, StoreInstance> | undefined)
+    ?? new Map<string, StoreInstance>()
+  if (hotData) hotData['storeRegistry'] = registry
+  return registry
 }
+
+export const storeRegistry: Map<string, StoreInstance> = _buildRegistry(import.meta.hot?.data)
 
 /** @testonly Clears all registered stores. Call in beforeEach to prevent state leaking between tests. */
 export function resetRegistry(): void {
