@@ -1,5 +1,15 @@
 # @byrding/react
 
+## 0.3.0
+
+### Minor Changes
+
+- Thread `MergedStore<StateOf<T>, ActionsOf<T>>` generics through `defineStore` in both React and Vue adapters.
+
+  - `defineStore` now has class and closure overloads so the hook/composable return type is fully inferred
+  - Hook/composable returns `MergedStore<StateOf<T>, ActionsOf<T>>` — state properties typed exactly, action signatures preserved, no opaque `T`
+  - Zero runtime behaviour changes — type layer only
+
 ## 0.2.3
 
 ### Patch Changes
