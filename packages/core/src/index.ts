@@ -1,5 +1,5 @@
 // Types (consumed by framework adapters)
-export type { StoreInstance, StoreHandle, StateOf, ActionsOf, MergedStore, Plugin, PluginFactory } from './types.js'
+export type { StoreInstance, StoreHandle, StateOf, ActionsOf, MergedStore, Plugin, PluginFactory, UseStoreFn } from './types.js'
 
 // Classification
 export { classify } from './classify.js'
@@ -18,7 +18,7 @@ export { storeRegistry, resetRegistry } from './registry.js'
 export { CoreStore, coreStore, configureByrding } from './coreStore.js'
 
 // Core primitive — used by framework adapters only
-export { createStore, generateComponentId } from './createStore.js'
+export { createStore, generateComponentId, buildMergedStore, makeUseStoreFn } from './createStore.js'
 
 // State watcher — vanilla-JS utility for observing individual state keys
 export { watchState } from './watch.js'

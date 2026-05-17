@@ -34,7 +34,11 @@ import { createReactiveState, normaliseKeyPath } from './proxy.js'
 import { subscribe, notify } from './subscriptions.js'
 import { storeRegistry } from './registry.js'
 import { coreStore, CoreStore } from './coreStore.js'
-import type { StoreInstance, StoreHandle, StateOf, ActionsOf, Plugin } from './types.js'
+import type { StoreInstance, StoreHandle, StateOf, ActionsOf, Plugin, UseStoreFn } from './types.js'
+
+// Module-level flag: true only while a store factory or constructor is executing.
+// Guards useStore() calls so they throw descriptively when used outside definition.
+let _inDefinitionContext = false
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -59,8 +63,10 @@ export function generateComponentId(): string {
  * - **Computed** properties expose a getter-only accessor that re-evaluates
  *   the bound getter function on every read (never cached).
  * - **Actions** are assigned directly as stable function references.
+ *
+ * Exported so `makeUseStoreFn` can produce live merged-store references.
  */
-function buildMergedStore<T>(store: StoreInstance): T {
+export function buildMergedStore<T>(store: StoreInstance): T {
   const merged: Record<string, unknown> = {}
 
   for (const key of store._stateKeys) {
@@ -85,6 +91,58 @@ function buildMergedStore<T>(store: StoreInstance): T {
   }
 
   return merged as T
+}
+
+// ─── Inter-store composition ──────────────────────────────────────────────────
+
+/**
+ * Creates the `useStore` context function injected into each store factory or
+ * constructor. Returns a lazy Proxy that resolves the target store from the
+ * registry on first property access — supporting forward references.
+ *
+ * Each call returns a fresh context function so per-store proxy caches are
+ * isolated and won't leak across registrations.
+ */
+export function makeUseStoreFn(): UseStoreFn {
+  // Cache the merged store per target ID once resolved, so we don't rebuild
+  // descriptors on every property read while still supporting forward refs.
+  const mergedCache = new Map<string, Record<string, unknown>>()
+
+  return <T extends Record<string, unknown>>(id: string): T => {
+    if (!_inDefinitionContext) {
+      throw new Error(
+        `[byrding] useStore() may only be called inside a store factory function or class constructor. ` +
+        `Store composition handles are not valid outside the definition phase.`
+      )
+    }
+
+    return new Proxy({} as unknown as T, {
+      get(_target, prop: string | symbol): unknown {
+        if (typeof prop !== 'string') return undefined
+        if (!mergedCache.has(id)) {
+          const inst = storeRegistry.get(id)
+          if (!inst) {
+            throw new Error(
+              `[byrding] useStore('${id}'): store "${id}" is not yet registered. ` +
+              `Forward references are supported — ensure "${id}" is defined before this handle is first accessed.`
+            )
+          }
+          mergedCache.set(id, buildMergedStore(inst) as Record<string, unknown>)
+        }
+        return mergedCache.get(id)![prop]
+      },
+      set(_target, prop: string | symbol, value: unknown): boolean {
+        if (typeof prop !== 'string') return false
+        if (!mergedCache.has(id)) {
+          const inst = storeRegistry.get(id)
+          if (!inst) return false
+          mergedCache.set(id, buildMergedStore(inst) as Record<string, unknown>)
+        }
+        mergedCache.get(id)![prop] = value
+        return true
+      },
+    })
+  }
 }
 
 // ─── Core primitive ──────────────────────────────────────────────────────────
@@ -134,9 +192,19 @@ export function createStore<T extends Record<string, unknown>>(
   if (!storeRegistry.has(id)) {
     const usingClass = isClass(definition)
 
-    const instance: T = usingClass
-      ? new (definition as new () => T)()
-      : (definition as () => T)()
+    // Build the useStore context fn for inter-store composition (issue #81).
+    // Passed as first arg to factory functions and class constructors.
+    // Backward compatible: existing no-arg factories/constructors ignore it.
+    const useStoreCtx = makeUseStoreFn()
+    _inDefinitionContext = true
+    let instance: T
+    try {
+      instance = usingClass
+        ? new (definition as new (useStore: UseStoreFn) => T)(useStoreCtx)
+        : (definition as (useStore: UseStoreFn) => T)(useStoreCtx)
+    } finally {
+      _inDefinitionContext = false
+    }
 
     // Extract per-store plugins before classify runs so that `plugins` is never
     // bucketed as a state key.  For class style, read the static property off the
