@@ -16,6 +16,7 @@ declare global {
   interface ImportMeta {
     readonly hot?: {
       readonly data: Record<string, unknown>
+      accept(cb?: (mod: unknown) => void): void
     }
   }
 }
