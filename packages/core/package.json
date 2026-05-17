@@ -1,6 +1,6 @@
 {
   "name": "@byrding/core",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Vanilla JS core — Proxy reactivity, subscription map, store registry",
   "type": "module",
   "main": "./dist/index.js",
@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "import": "./dist/testing.js"
     }
   },
   "files": [
@@ -17,6 +21,7 @@
   ],
   "scripts": {
     "build": "tsc --project tsconfig.json",
+    "test": "vitest run",
     "prepublishOnly": "pnpm run build"
   },
   "repository": {
@@ -29,6 +34,7 @@
     "provenance": true
   },
   "devDependencies": {
-    "typescript": "^5.0.2"
+    "typescript": "^5.0.2",
+    "vitest": "^2.0.0"
   }
 }
