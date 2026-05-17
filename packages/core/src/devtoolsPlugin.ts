@@ -99,15 +99,13 @@ function createHook(): ByrdingDevtoolsHook {
 }
 
 export function installDevtoolsHook(): void {
-  if (typeof window === 'undefined') return
-  const w = window as DevtoolsWindow
-  if (w.__BYRDING_DEVTOOLS__) return
-  w.__BYRDING_DEVTOOLS__ = createHook()
+  const g = globalThis as DevtoolsWindow
+  if (g.__BYRDING_DEVTOOLS__) return
+  g.__BYRDING_DEVTOOLS__ = createHook()
 }
 
 export function getDevtoolsHook(): ByrdingDevtoolsHook | null {
-  if (typeof window === 'undefined') return null
-  return (window as DevtoolsWindow).__BYRDING_DEVTOOLS__ ?? null
+  return (globalThis as DevtoolsWindow).__BYRDING_DEVTOOLS__ ?? null
 }
 
 // ─── Plugin factory ───────────────────────────────────────────────────────────
