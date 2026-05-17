@@ -157,13 +157,6 @@ export function defineStore<T extends Record<string, unknown>>(
 
 // ─── Vite HMR ────────────────────────────────────────────────────────────────
 
-// Minimal type for Vite's HMR API — avoids a hard devDependency on vite.
-declare global {
-  interface ImportMeta {
-    readonly hot?: { accept(cb?: (mod: unknown) => void): void }
-  }
-}
-
 if (import.meta.hot) {
   // Self-accept so Fast Refresh doesn't bubble up to the app root.
   // State preservation is handled by the core registry hot.data fix (#40).
