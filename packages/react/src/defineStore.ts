@@ -154,3 +154,20 @@ export function defineStore<T extends Record<string, unknown>>(
     return storeHandle.store as MergedStore<StateOf<T>, ActionsOf<T>>
   }
 }
+
+// ─── Vite HMR ────────────────────────────────────────────────────────────────
+
+// Minimal type for Vite's HMR API — avoids a hard devDependency on vite.
+declare global {
+  interface ImportMeta {
+    readonly hot?: { accept(cb?: (mod: unknown) => void): void }
+  }
+}
+
+if (import.meta.hot) {
+  // Self-accept so Fast Refresh doesn't bubble up to the app root.
+  // State preservation is handled by the core registry hot.data fix (#40).
+  // useSyncExternalStore re-subscribes automatically on next render because
+  // createStore returns the same preserved instance for the same id.
+  import.meta.hot.accept()
+}
