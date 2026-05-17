@@ -113,9 +113,11 @@ export function defineStore<T extends Record<string, unknown>>(
 
 // ─── Vite HMR ────────────────────────────────────────────────────────────────
 
-if (import.meta.hot) {
+type _ViteHot = { accept(cb?: (mod: unknown) => void): void }
+const _hot = (import.meta as { hot?: _ViteHot }).hot
+if (_hot) {
   // Self-accept so Vite doesn't propagate the reload to the app root.
   // The shallowReactive in useStore() re-syncs on the next composable call
   // because createStore returns the preserved instance from hot.data.
-  import.meta.hot.accept()
+  _hot.accept()
 }
