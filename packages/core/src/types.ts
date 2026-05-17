@@ -87,6 +87,21 @@ export interface StoreInstance<
   _localPlugins: Plugin[]
 }
 
+// ─── Inter-store composition ─────────────────────────────────────────────────
+
+/**
+ * Context function passed as the first argument to closure factory functions
+ * and class constructors. Returns a live lazy proxy for the target store.
+ *
+ * The proxy resolves from the registry on first property access, so forward
+ * references (using a store that hasn't been registered yet) are supported as
+ * long as the target store is registered before any property is first read.
+ *
+ * May only be called during store definition (inside a factory or constructor).
+ * Throws if called after the definition phase is complete.
+ */
+export type UseStoreFn = <T extends Record<string, unknown>>(id: string) => T
+
 // ─── Plugin system ───────────────────────────────────────────────────────────
 
 export interface Plugin<S extends Record<string, unknown> = Record<string, unknown>> {

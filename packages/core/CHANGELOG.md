@@ -1,5 +1,11 @@
 # @byrding/core
 
+## 0.9.0
+
+### Minor Changes
+
+- Add `useStore()` inter-store composition accessor (issue #81). Factory functions and class constructors now receive a `useStore<T>(id)` context argument that returns a lazy live proxy to any registered store. Forward references are supported: the proxy resolves from the registry at first property access, not at call time.
+
 ## 0.8.0
 
 ### Minor Changes
