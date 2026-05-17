@@ -12,14 +12,7 @@
  */
 import type { StoreInstance } from './types.js';
 
-declare global {
-  interface ImportMeta {
-    readonly hot?: {
-      readonly data: Record<string, unknown>
-      accept(cb?: (mod: unknown) => void): void
-    }
-  }
-}
+type ViteHot = { readonly data: Record<string, unknown>; accept(cb?: (mod: unknown) => void): void }
 
 /** @internal Extracted for unit-testability without a live Vite dev server. */
 export function _buildRegistry(hotData?: Record<string, unknown>): Map<string, StoreInstance> {
@@ -30,7 +23,8 @@ export function _buildRegistry(hotData?: Record<string, unknown>): Map<string, S
   return registry
 }
 
-export const storeRegistry: Map<string, StoreInstance> = _buildRegistry(import.meta.hot?.data)
+const _hot = (import.meta as { hot?: ViteHot }).hot
+export const storeRegistry: Map<string, StoreInstance> = _buildRegistry(_hot?.data)
 
 /** @testonly Clears all registered stores. Call in beforeEach to prevent state leaking between tests. */
 export function resetRegistry(): void {
