@@ -157,10 +157,12 @@ export function defineStore<T extends Record<string, unknown>>(
 
 // ─── Vite HMR ────────────────────────────────────────────────────────────────
 
-if (import.meta.hot) {
+type _ViteHot = { accept(cb?: (mod: unknown) => void): void }
+const _hot = (import.meta as { hot?: _ViteHot }).hot
+if (_hot) {
   // Self-accept so Fast Refresh doesn't bubble up to the app root.
   // State preservation is handled by the core registry hot.data fix (#40).
   // useSyncExternalStore re-subscribes automatically on next render because
   // createStore returns the same preserved instance for the same id.
-  import.meta.hot.accept()
+  _hot.accept()
 }
