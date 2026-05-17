@@ -1,5 +1,21 @@
 # @byrding/react
 
+## 0.4.0
+
+### Minor Changes
+
+- de2aeb4: Add `renderStore()` helper to `@byrding/react/testing` sub-path. Wraps RTL's `renderHook` with `act()` to eliminate boilerplate when testing store-backed hooks.
+
+### Patch Changes
+
+- 5839498: Consolidate ImportMeta.hot augmentation into core to fix TS2717 conflict between data and accept declarations.
+- 5dca789: Add Vite HMR self-accept handler to defineStore so Fast Refresh reloads don't bubble to the app root. State preservation is handled by the core registry hot.data fix.
+- Updated dependencies [1344dab]
+- Updated dependencies [26c6a58]
+- Updated dependencies [5839498]
+- Updated dependencies [4035ce0]
+  - @byrding/core@0.8.0
+
 ## 0.3.0
 
 ### Minor Changes
