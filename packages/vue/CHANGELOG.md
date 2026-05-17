@@ -1,5 +1,17 @@
 # @byrding/vue
 
+## 0.3.1
+
+### Patch Changes
+
+- 5839498: Consolidate ImportMeta.hot augmentation into core to fix TS2717 conflict between data and accept declarations.
+- a51ae37: Add Vite HMR self-accept handler so the defineStore module self-accepts hot reloads instead of propagating them to the app root. The shallowReactive in useStore() re-syncs automatically on the next composable call because createStore returns the preserved instance from the core registry.
+- Updated dependencies [1344dab]
+- Updated dependencies [26c6a58]
+- Updated dependencies [5839498]
+- Updated dependencies [4035ce0]
+  - @byrding/core@0.8.0
+
 ## 0.3.0
 
 ### Minor Changes

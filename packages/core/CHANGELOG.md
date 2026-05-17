@@ -1,5 +1,17 @@
 # @byrding/core
 
+## 0.8.0
+
+### Minor Changes
+
+- 1344dab: Add createMockStore() testing utility exported from @byrding/core/testing. Returns a plain object with initial state values and action spies for component test isolation.
+- 26c6a58: Add `getContext()` to `ByrdingDevtoolsHook` interface and the installed `window.__BYRDING_DEVTOOLS__` object. Delegates to core `getContext()`. Available for browser console debugging and Chrome DevTools Extension (#39) without requiring an ES module import.
+- 4035ce0: Add `getContext()` — walks `storeRegistry` and returns a fully serializable `ByrdingContext` snapshot (state, stateSchema, actions, computed, subscriberCount per store). Tree-shakeable named export. Designed for LLM prompt injection and `.byrding-context.json` generation.
+
+### Patch Changes
+
+- 5839498: Consolidate ImportMeta.hot augmentation into core to fix TS2717 conflict between data and accept declarations.
+
 ## 0.7.0
 
 ### Minor Changes
