@@ -6,8 +6,8 @@
 
 - Updated dependencies
   - @byrding/core@0.7.0
-  - @byrding/react@0.2.4
-  - @byrding/vue@0.2.4
+  - @byrding/react@0.3.0
+  - @byrding/vue@0.3.0
 
 ## 0.0.7
 

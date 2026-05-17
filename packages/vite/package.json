@@ -1,7 +1,7 @@
 {
-  "name": "@byrding/vue",
-  "version": "0.3.0",
-  "description": "Vue 3 adapter for @byrding/core — defineStore returns a composable via shallowReactive",
+  "name": "@byrding/vite",
+  "version": "0.2.0",
+  "description": "Vite plugin for @byrding — writes .byrding-context.json on dev-server start",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,23 +23,19 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/nurmaso/byrding",
-    "directory": "packages/vue"
+    "directory": "packages/vite"
   },
   "publishConfig": {
     "access": "public",
     "provenance": true
   },
-  "dependencies": {
-    "@byrding/core": "workspace:*"
-  },
   "peerDependencies": {
-    "vue": ">=3.0.0"
+    "vite": "^4.0.0 || ^5.0.0 || ^6.0.0"
   },
   "devDependencies": {
-    "@vue/test-utils": "^2.4.0",
-    "jsdom": "^25.0.0",
+    "@types/node": "^12.20.55",
     "typescript": "^5.0.2",
-    "vitest": "^2.0.0",
-    "vue": "^3.4.0"
+    "vite": "^5.0.0",
+    "vitest": "^2.0.0"
   }
 }

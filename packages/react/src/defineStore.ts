@@ -28,7 +28,15 @@
 
 import { useRef } from 'react'
 import { useSyncExternalStore } from 'react'
-import { createStore, generateComponentId, getDevtoolsHook, type CoreStore } from '@byrding/core'
+import {
+  createStore,
+  generateComponentId,
+  getDevtoolsHook,
+  type CoreStore,
+  type MergedStore,
+  type StateOf,
+  type ActionsOf,
+} from '@byrding/core'
 
 // ─── Component name inference ─────────────────────────────────────────────────
 
@@ -59,14 +67,24 @@ function inferComponentName(): string | undefined {
 
 // ─── defineStore ─────────────────────────────────────────────────────────────
 
+export function defineStore<C extends new () => object>(
+  id: string,
+  definition: C,
+  options?: { core?: CoreStore },
+): (keyPaths?: string[]) => MergedStore<StateOf<InstanceType<C>>, ActionsOf<InstanceType<C>>>
+export function defineStore<T extends Record<string, unknown>>(
+  id: string,
+  definition: () => T,
+  options?: { core?: CoreStore },
+): (keyPaths?: string[]) => MergedStore<StateOf<T>, ActionsOf<T>>
 export function defineStore<T extends Record<string, unknown>>(
   id: string,
   definition: (new () => T) | (() => T),
   options?: { core?: CoreStore },
-) {
+): (keyPaths?: string[]) => MergedStore<StateOf<T>, ActionsOf<T>> {
   const storeHandle = createStore<T>(id, definition, options)
 
-  return function useStore(keyPaths: string[] = ['*']): T {
+  return function useStore(keyPaths: string[] = ['*']): MergedStore<StateOf<T>, ActionsOf<T>> {
     const componentIdRef = useRef<string | null>(null)
     if (!componentIdRef.current) {
       componentIdRef.current = generateComponentId()
@@ -133,6 +151,23 @@ export function defineStore<T extends Record<string, unknown>>(
       storeHandle.getSnapshot,
     )
 
-    return storeHandle.store
+    return storeHandle.store as MergedStore<StateOf<T>, ActionsOf<T>>
   }
+}
+
+// ─── Vite HMR ────────────────────────────────────────────────────────────────
+
+// Minimal type for Vite's HMR API — avoids a hard devDependency on vite.
+declare global {
+  interface ImportMeta {
+    readonly hot?: { accept(cb?: (mod: unknown) => void): void }
+  }
+}
+
+if (import.meta.hot) {
+  // Self-accept so Fast Refresh doesn't bubble up to the app root.
+  // State preservation is handled by the core registry hot.data fix (#40).
+  // useSyncExternalStore re-subscribes automatically on next render because
+  // createStore returns the same preserved instance for the same id.
+  import.meta.hot.accept()
 }

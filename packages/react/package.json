@@ -1,6 +1,6 @@
 {
   "name": "@byrding/react",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "description": "React adapter for @byrding/core — defineStore returns a hook via useSyncExternalStore",
   "type": "module",
   "main": "./dist/index.js",

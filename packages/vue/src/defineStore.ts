@@ -26,18 +26,36 @@
  */
 
 import { shallowReactive, onUnmounted, getCurrentInstance } from 'vue'
-import { createStore, generateComponentId, getDevtoolsHook, type CoreStore } from '@byrding/core'
+import {
+  createStore,
+  generateComponentId,
+  getDevtoolsHook,
+  type CoreStore,
+  type MergedStore,
+  type StateOf,
+  type ActionsOf,
+} from '@byrding/core'
 
 // ─── defineStore ─────────────────────────────────────────────────────────────
 
+export function defineStore<C extends new () => object>(
+  id: string,
+  definition: C,
+  options?: { core?: CoreStore },
+): (keyPaths?: string[]) => MergedStore<StateOf<InstanceType<C>>, ActionsOf<InstanceType<C>>>
+export function defineStore<T extends Record<string, unknown>>(
+  id: string,
+  definition: () => T,
+  options?: { core?: CoreStore },
+): (keyPaths?: string[]) => MergedStore<StateOf<T>, ActionsOf<T>>
 export function defineStore<T extends Record<string, unknown>>(
   id: string,
   definition: (new () => T) | (() => T),
   options?: { core?: CoreStore },
-) {
+): (keyPaths?: string[]) => MergedStore<StateOf<T>, ActionsOf<T>> {
   const storeHandle = createStore<T>(id, definition, options)
 
-  return function useStore(keyPaths: string[] = ['*']): T {
+  return function useStore(keyPaths: string[] = ['*']): MergedStore<StateOf<T>, ActionsOf<T>> {
     const componentId = generateComponentId()
     const hook = getDevtoolsHook()
 
@@ -50,7 +68,7 @@ export function defineStore<T extends Record<string, unknown>>(
 
     let renderCount = 0
 
-    const reactiveStore = shallowReactive({ ...storeHandle.store }) as T
+    const reactiveStore = shallowReactive({ ...storeHandle.store }) as MergedStore<StateOf<T>, ActionsOf<T>>
 
     const syncStore = () => {
       renderCount++
@@ -89,6 +107,22 @@ export function defineStore<T extends Record<string, unknown>>(
       })
     }
 
-    return reactiveStore
+    return reactiveStore as MergedStore<StateOf<T>, ActionsOf<T>>
   }
+}
+
+// ─── Vite HMR ────────────────────────────────────────────────────────────────
+
+// Minimal type for Vite's HMR API — avoids a hard devDependency on vite.
+declare global {
+  interface ImportMeta {
+    readonly hot?: { accept(cb?: (mod: unknown) => void): void }
+  }
+}
+
+if (import.meta.hot) {
+  // Self-accept so Vite doesn't propagate the reload to the app root.
+  // The shallowReactive in useStore() re-syncs on the next composable call
+  // because createStore returns the preserved instance from hot.data.
+  import.meta.hot.accept()
 }
