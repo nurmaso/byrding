@@ -110,3 +110,19 @@ export function defineStore<T extends Record<string, unknown>>(
     return reactiveStore as MergedStore<StateOf<T>, ActionsOf<T>>
   }
 }
+
+// ─── Vite HMR ────────────────────────────────────────────────────────────────
+
+// Minimal type for Vite's HMR API — avoids a hard devDependency on vite.
+declare global {
+  interface ImportMeta {
+    readonly hot?: { accept(cb?: (mod: unknown) => void): void }
+  }
+}
+
+if (import.meta.hot) {
+  // Self-accept so Vite doesn't propagate the reload to the app root.
+  // The shallowReactive in useStore() re-syncs on the next composable call
+  // because createStore returns the preserved instance from hot.data.
+  import.meta.hot.accept()
+}
