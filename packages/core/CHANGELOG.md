@@ -11,6 +11,7 @@
 ### Patch Changes
 
 - Configure vitest test runner across all packages with shared base config, framework-appropriate environments, and passing smoke tests per package.
+- Preserve storeRegistry across Vite HMR reloads using import.meta.hot.data, so store state, subscriptions, and action bindings survive hot module replacement in development. No runtime change in production.
 
 ## 0.6.0
 
