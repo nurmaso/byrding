@@ -23,6 +23,7 @@ export default defineConfig({
       input: {
         devtools: resolve(__dirname, 'devtools.html'),
         panel: resolve(__dirname, 'panel.html'),
+        'injected-script': resolve(__dirname, 'src/injected-script.ts'),
         'content-script': resolve(__dirname, 'src/content-script.ts'),
         background: resolve(__dirname, 'src/background.ts'),
       },
