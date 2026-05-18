@@ -31,7 +31,15 @@
 
 import { classify } from './classify.js'
 import { createReactiveState, normaliseKeyPath } from './proxy.js'
-import { subscribe, notify } from './subscriptions.js'
+import {
+  subscribe,
+  notify,
+  pushEvaluatingStore,
+  popEvaluatingStore,
+  peekEvaluatingStore,
+  registerCrossStoreDep,
+  notifyCrossStoreDeps,
+} from './subscriptions.js'
 import { storeRegistry } from './registry.js'
 import { coreStore, CoreStore } from './coreStore.js'
 import type { StoreInstance, StoreHandle, StateOf, ActionsOf, Plugin, UseStoreFn } from './types.js'
@@ -81,7 +89,11 @@ export function buildMergedStore<T>(store: StoreInstance): T {
 
   for (const key of store._computedKeys) {
     Object.defineProperty(merged, key, {
-      get: () => store._getterFns[key](),
+      get: () => {
+        pushEvaluatingStore(store.id)
+        try { return store._getterFns[key]() }
+        finally { popEvaluatingStore() }
+      },
       enumerable: true,
     })
   }
@@ -119,6 +131,13 @@ export function makeUseStoreFn(): UseStoreFn {
     return new Proxy({} as unknown as T, {
       get(_target, prop: string | symbol): unknown {
         if (typeof prop !== 'string') return undefined
+        // Register a reactive dep edge when read inside a computed getter.
+        // peekEvaluatingStore() is non-null only during buildMergedStore computed
+        // accessor evaluation — never during action calls.
+        const evaluatingId = peekEvaluatingStore()
+        if (evaluatingId !== undefined && evaluatingId !== id) {
+          registerCrossStoreDep(evaluatingId, id)
+        }
         if (!mergedCache.has(id)) {
           const inst = storeRegistry.get(id)
           if (!inst) {
@@ -358,6 +377,7 @@ export function createStore<T extends Record<string, unknown>>(
     activeCore.runOnStateChange(id, normaliseKeyPath(keyPath), newValue, oldValue)
     for (const p of store._localPlugins) p.onStateChange?.(id, normaliseKeyPath(keyPath), newValue, oldValue)
     originalNotify(keyPath, oldValue, newValue)
+    notifyCrossStoreDeps(id, (targetId) => storeRegistry.get(targetId))
   }
 
   for (const key of store._actionKeys) {
