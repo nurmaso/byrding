@@ -21,7 +21,7 @@ export type ActionsOf<T> = {
 }
 
 /** Merge state, actions, and computed into the flat consumer-facing type. */
-export type MergedStore<S, A, C = Record<never, never>> = S & A & C
+export type MergedStore<S, A, C = Record<never, never>> = S & A & C & { $reset(): void }
 
 // ─── Internal store shape ────────────────────────────────────────────────────
 
@@ -37,6 +37,12 @@ export interface StoreInstance<
    * `getSnapshot()` spreads this to produce a stable snapshot reference.
    */
   _raw: TState
+
+  /**
+   * Shallow snapshot of initial state captured at registration time.
+   * Used by `$reset()` to restore all state keys to their starting values.
+   */
+  _initialRaw: TState
 
   /**
    * Reactive surface:
@@ -125,8 +131,8 @@ export type PluginFactory<S extends Record<string, unknown> = Record<string, unk
  * package's `defineStore` exclusively.
  */
 export interface StoreHandle<T> {
-  /** The flat merged store object — state, computed, and actions top-level. */
-  store: T
+  /** The flat merged store object — state, computed, actions, and $reset() top-level. */
+  store: T & { $reset(): void }
 
   /**
    * Register a component subscriber for the given key paths.
