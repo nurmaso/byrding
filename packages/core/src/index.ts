@@ -8,8 +8,17 @@ export type { Classification } from './classify.js'
 // Proxy-based reactivity
 export { createReactiveState, normaliseKeyPath } from './proxy.js'
 
-// Subscription map
-export { subscribe, notify } from './subscriptions.js'
+// Subscription map + cross-store dep graph
+export {
+  subscribe,
+  notify,
+  ByrdingCycleError,
+  storeDepEdges,
+  registerCrossStoreDep,
+  removeStoreDeps,
+  resetDepEdges,
+  notifyCrossStoreDeps,
+} from './subscriptions.js'
 
 // Store registry
 export { storeRegistry, resetRegistry } from './registry.js'
