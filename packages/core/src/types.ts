@@ -57,9 +57,13 @@ export interface StoreInstance<
   _stateKeys: string[]
   _actionKeys: string[]
   _computedKeys: string[]
+  _accessorKeys: string[]
 
   /** Getter functions, each bound to `_proxy`. */
   _getterFns: Record<string, () => unknown>
+
+  /** Accessor get/set pairs for properties with both a getter and a setter. */
+  _accessorFns: Record<string, { get: () => unknown; set: (v: unknown) => void }>
 
   /** Action functions, each bound to `_proxy` and typed against TActions. */
   _actionFns: TActions

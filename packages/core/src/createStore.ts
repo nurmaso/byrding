@@ -98,6 +98,14 @@ export function buildMergedStore<T>(store: StoreInstance): T & { $reset(): void 
     })
   }
 
+  for (const key of store._accessorKeys) {
+    Object.defineProperty(merged, key, {
+      get: () => store._accessorFns[key].get(),
+      set: (v) => { store._accessorFns[key].set(v) },
+      enumerable: true,
+    })
+  }
+
   for (const key of store._actionKeys) {
     merged[key] = store._actionFns[key]
   }
@@ -249,7 +257,7 @@ export function createStore<T extends Record<string, unknown>>(
       }
     }
 
-    const { stateKeys, actionKeys, computedKeys } = classify(instance)
+    const { stateKeys, actionKeys, computedKeys, accessorKeys } = classify(instance)
     const proto = Object.getPrototypeOf(instance)
     const hasProto = proto && proto !== Object.prototype
 
@@ -263,7 +271,9 @@ export function createStore<T extends Record<string, unknown>>(
       _stateKeys: stateKeys,
       _actionKeys: actionKeys,
       _computedKeys: computedKeys,
+      _accessorKeys: accessorKeys,
       _getterFns: {},
+      _accessorFns: {},
       _actionFns: {} as ActionsOf<T>,
       _updateMap: new Map(),
       _callbackMap: new Map(),
@@ -325,9 +335,23 @@ export function createStore<T extends Record<string, unknown>>(
     const bindTarget: Record<string, unknown> = usingClass
       ? new Proxy(storeInstance._proxy, {
           get(target, key: string) {
-            const fn = storeInstance._getterFns[key]
-            if (typeof key === 'string' && fn) return fn()
+            if (typeof key === 'string') {
+              const getter = storeInstance._getterFns[key]
+              if (getter) return getter()
+              const accessor = storeInstance._accessorFns[key]
+              if (accessor) return accessor.get()
+            }
             return Reflect.get(target, key)
+          },
+          set(target, key: string, value: unknown) {
+            if (typeof key === 'string') {
+              const accessor = storeInstance._accessorFns[key]
+              if (accessor) {
+                accessor.set(value)
+                return true
+              }
+            }
+            return Reflect.set(target, key, value)
           },
         })
       : storeInstance._proxy
@@ -366,6 +390,56 @@ export function createStore<T extends Record<string, unknown>>(
           : undefined)
       if (descriptor?.get) {
         storeInstance._getterFns[key] = descriptor.get.bind(bindTarget)
+      }
+    }
+
+    // ── Bind accessor state (get+set pairs) ──────────────────────────────────
+    //
+    // Class:   getter/setter on the prototype, both bound to `bindTarget` so
+    //          `this._celsius` reads/writes through the proxy.  The wrapped set
+    //          also fires `_notify` for the accessor key itself so subscribers
+    //          to that key path are notified on write.
+    // Closure: preserve the original get/set descriptor; redefine the property
+    //          with a wrapped setter that fires `_notify` after the original
+    //          setter runs (the original setter updates the closed-over variable
+    //          but never notifies subscribers).
+    for (const key of accessorKeys) {
+      const descriptor =
+        Object.getOwnPropertyDescriptor(instance, key) ??
+        (hasProto ? Object.getOwnPropertyDescriptor(proto, key) : undefined)
+      if (!descriptor?.get || !descriptor?.set) continue
+
+      if (usingClass) {
+        const boundGet = descriptor.get.bind(bindTarget)
+        const boundSet = descriptor.set.bind(bindTarget)
+        storeInstance._accessorFns[key] = {
+          get: boundGet,
+          set: (v: unknown) => {
+            const oldValue = boundGet()
+            boundSet(v)
+            const newValue = boundGet()
+            storeInstance._notify(key, oldValue, newValue)
+          },
+        }
+      } else {
+        const inst = instance as Record<string, unknown>
+        const origGet = descriptor.get
+        const origSet = descriptor.set
+        Object.defineProperty(inst, key, {
+          get: origGet,
+          set: (v: unknown) => {
+            const oldValue = origGet.call(inst)
+            origSet.call(inst, v)
+            const newValue = origGet.call(inst)
+            storeInstance._notify(key, oldValue, newValue)
+          },
+          enumerable: true,
+          configurable: true,
+        })
+        storeInstance._accessorFns[key] = {
+          get: () => origGet.call(inst),
+          set: (v: unknown) => { (inst as Record<string, unknown>)[key] = v },
+        }
       }
     }
 
@@ -415,6 +489,9 @@ export function createStore<T extends Record<string, unknown>>(
     getSnapshot(): any {
       if (!_snapshotCache) {
         _snapshotCache = { ...store._raw }
+        for (const key of store._accessorKeys) {
+          (_snapshotCache as Record<string, unknown>)[key] = store._accessorFns[key].get()
+        }
       }
       return _snapshotCache
     },

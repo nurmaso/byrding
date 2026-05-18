@@ -23,12 +23,14 @@ export interface Classification {
   stateKeys: string[]
   actionKeys: string[]
   computedKeys: string[]
+  accessorKeys: string[]
 }
 
 export function classify(instance: object): Classification {
   const stateKeys: string[] = []
   const actionKeys: string[] = []
   const computedKeys: string[] = []
+  const accessorKeys: string[] = []
 
   // ── Own properties ───────────────────────────────────────────────────────
   // Class fields and closure object properties both land here.
@@ -36,7 +38,11 @@ export function classify(instance: object): Classification {
     Object.getOwnPropertyDescriptors(instance),
   )) {
     if (typeof descriptor.get === 'function') {
-      computedKeys.push(key)
+      if (typeof descriptor.set === 'function') {
+        accessorKeys.push(key)
+      } else {
+        computedKeys.push(key)
+      }
     } else if (typeof descriptor.value === 'function') {
       actionKeys.push(key)
     } else {
@@ -53,12 +59,16 @@ export function classify(instance: object): Classification {
       if (key === 'constructor') continue
       const descriptor = Object.getOwnPropertyDescriptor(proto, key)!
       if (typeof descriptor.get === 'function') {
-        computedKeys.push(key)
+        if (typeof descriptor.set === 'function') {
+          accessorKeys.push(key)
+        } else {
+          computedKeys.push(key)
+        }
       } else if (typeof descriptor.value === 'function') {
         actionKeys.push(key)
       }
     }
   }
 
-  return { stateKeys, actionKeys, computedKeys }
+  return { stateKeys, actionKeys, computedKeys, accessorKeys }
 }
