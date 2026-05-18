@@ -68,7 +68,7 @@ export function defineStore<T extends Record<string, unknown>>(
 
     let renderCount = 0
 
-    const reactiveStore = shallowReactive({ ...storeHandle.store }) as MergedStore<StateOf<T>, ActionsOf<T>>
+    const reactiveStore = shallowReactive({ ...storeHandle.store }) as unknown as MergedStore<StateOf<T>, ActionsOf<T>>
 
     const syncStore = () => {
       renderCount++

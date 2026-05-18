@@ -66,7 +66,7 @@ export function generateComponentId(): string {
  *
  * Exported so `makeUseStoreFn` can produce live merged-store references.
  */
-export function buildMergedStore<T>(store: StoreInstance): T {
+export function buildMergedStore<T>(store: StoreInstance): T & { $reset(): void } {
   const merged: Record<string, unknown> = {}
 
   for (const key of store._stateKeys) {
@@ -90,7 +90,16 @@ export function buildMergedStore<T>(store: StoreInstance): T {
     merged[key] = store._actionFns[key]
   }
 
-  return merged as T
+  merged['$reset'] = () => {
+    for (const key of store._stateKeys) {
+      const initial = (store._initialRaw as Record<string, unknown>)[key]
+      if ((store._raw as Record<string, unknown>)[key] !== initial) {
+        store._proxy[key] = initial
+      }
+    }
+  }
+
+  return merged as T & { $reset(): void }
 }
 
 // ─── Inter-store composition ──────────────────────────────────────────────────
@@ -230,6 +239,7 @@ export function createStore<T extends Record<string, unknown>>(
     const storeInstance: StoreInstance<StateOf<T>, ActionsOf<T>> = {
       id,
       _raw: {} as StateOf<T>,
+      _initialRaw: {} as StateOf<T>,
       _proxy: null as unknown as Record<string, unknown>,
       _stateKeys: stateKeys,
       _actionKeys: actionKeys,
@@ -249,6 +259,7 @@ export function createStore<T extends Record<string, unknown>>(
         (raw as Record<string, unknown>)[key] = (instance as Record<string, unknown>)[key]
       }
       storeInstance._raw = raw
+      storeInstance._initialRaw = { ...raw } as StateOf<T>
       storeInstance._proxy = createReactiveState(raw, (path) => storeInstance._notify(path))
 
     } else {
@@ -278,6 +289,7 @@ export function createStore<T extends Record<string, unknown>>(
       }
 
       storeInstance._raw = raw
+      storeInstance._initialRaw = { ...raw } as StateOf<T>
       storeInstance._proxy = inst
     }
 
