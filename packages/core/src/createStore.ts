@@ -478,8 +478,37 @@ export function createStore<T extends Record<string, unknown>>(
 
   const mergedStore = buildMergedStore<T>(store)
 
+  // $patch — batch update with a single subscriber notification.
+  // Writes each changed key directly to _raw (bypassing per-key proxy notify),
+  // runs plugin onStateChange for each changed key, then fires one notify('*').
+  ;(mergedStore as Record<string, unknown>)['$patch'] = (partial: Partial<StateOf<T>>) => {
+    const raw = store._raw as Record<string, unknown>
+    const changes: Array<{ key: string; old: unknown; new: unknown }> = []
+
+    for (const key of store._stateKeys) {
+      if (!Object.prototype.hasOwnProperty.call(partial, key)) continue
+      const newVal = (partial as Record<string, unknown>)[key]
+      const oldVal = raw[key]
+      if (oldVal === newVal) continue
+      raw[key] = newVal
+      changes.push({ key, old: oldVal, new: newVal })
+    }
+
+    if (changes.length === 0) return
+
+    _snapshotCache = null
+
+    for (const { key, old: oldVal, new: newVal } of changes) {
+      activeCore.runOnStateChange(id, key, newVal, oldVal)
+      for (const p of store._localPlugins) p.onStateChange?.(id, key, newVal, oldVal)
+    }
+
+    notify(store, '*')
+    notifyCrossStoreDeps(id, (targetId) => storeRegistry.get(targetId))
+  }
+
   return {
-    store: mergedStore,
+    store: mergedStore as T & { $reset(): void; $patch(partial: Partial<StateOf<T>>): void },
 
     subscribe(componentId, keyPaths, callback) {
       return subscribe(store, componentId, keyPaths, callback)

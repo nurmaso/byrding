@@ -21,7 +21,10 @@ export type ActionsOf<T> = {
 }
 
 /** Merge state, actions, and computed into the flat consumer-facing type. */
-export type MergedStore<S, A, C = Record<never, never>> = S & A & C & { $reset(): void }
+export type MergedStore<S, A, C = Record<never, never>> = S & A & C & {
+  $reset(): void
+  $patch(partial: Partial<S>): void
+}
 
 // ─── Internal store shape ────────────────────────────────────────────────────
 
@@ -135,8 +138,8 @@ export type PluginFactory<S extends Record<string, unknown> = Record<string, unk
  * package's `defineStore` exclusively.
  */
 export interface StoreHandle<T> {
-  /** The flat merged store object — state, computed, actions, and $reset() top-level. */
-  store: T & { $reset(): void }
+  /** The flat merged store object — state, computed, actions, $reset(), and $patch() top-level. */
+  store: T & { $reset(): void; $patch(partial: Partial<StateOf<T>>): void }
 
   /**
    * Register a component subscriber for the given key paths.
