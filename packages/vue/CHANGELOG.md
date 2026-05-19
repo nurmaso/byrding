@@ -1,5 +1,16 @@
 # @byrding/vue
 
+## 0.3.3
+
+### Patch Changes
+
+- 7c3c093: Add `$reset()` method to every store instance. Calling `store.$reset()` restores all state keys to their initial values in a single operation, only notifying subscribers for keys that actually changed. Both class and closure definition styles are supported.
+- Updated dependencies [66d904c]
+- Updated dependencies [c13fc01]
+- Updated dependencies [76d814c]
+- Updated dependencies [7c3c093]
+  - @byrding/core@0.10.0
+
 ## 0.3.2
 
 ### Patch Changes

@@ -1,5 +1,38 @@
 # @byrding/core
 
+## 0.10.0
+
+### Minor Changes
+
+- 66d904c: Add cross-store reactive subscriptions and cycle detection (#82).
+
+  Computed getters that read another store via `useStore()` now automatically
+  re-notify their own subscribers when the upstream store changes. A DFS
+  in-stack cycle guard detects circular reactive dependencies between stores and
+  throws `ByrdingCycleError` before the call stack overflows.
+
+  New exports: `ByrdingCycleError`, `storeDepEdges`, `registerCrossStoreDep`,
+  `removeStoreDeps`, `resetDepEdges`, `notifyCrossStoreDeps`.
+
+- c13fc01: feat: reactive get/set property accessors
+
+  Properties with both a getter and setter are now classified as accessor state rather than
+  computed. Writes go through the reactive surface and notify subscribers; getSnapshot()
+  includes the getter's current value for each accessor key.
+
+- 76d814c: Add `$patch()` — batch state update with a single subscriber notification (#92).
+
+  `store.$patch({ key: value, ... })` applies multiple state mutations atomically.
+  Subscribers are notified exactly once regardless of how many keys changed, preventing
+  redundant React re-renders from multi-key updates.
+
+  - Unknown keys are silently ignored.
+  - Keys whose value is strictly unchanged are skipped (no notification if nothing changed).
+  - Plugin `onStateChange` fires per changed key; subscribers fire once via `notify('*')`.
+  - Snapshot cache is invalidated once; cross-store deps are propagated once.
+
+- 7c3c093: Add `$reset()` method to every store instance. Calling `store.$reset()` restores all state keys to their initial values in a single operation, only notifying subscribers for keys that actually changed. Both class and closure definition styles are supported.
+
 ## 0.9.0
 
 ### Minor Changes
