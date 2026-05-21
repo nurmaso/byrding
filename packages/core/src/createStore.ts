@@ -100,7 +100,11 @@ export function buildMergedStore<T>(store: StoreInstance): T & { $reset(): void 
 
   for (const key of store._accessorKeys) {
     Object.defineProperty(merged, key, {
-      get: () => store._accessorFns[key].get(),
+      get: () => {
+        pushEvaluatingStore(store.id)
+        try { return store._accessorFns[key].get() }
+        finally { popEvaluatingStore() }
+      },
       set: (v) => { store._accessorFns[key].set(v) },
       enumerable: true,
     })
@@ -444,8 +448,12 @@ export function createStore<T extends Record<string, unknown>>(
     }
 
     storeRegistry.set(id, storeInstance)
-    activeCore.runOnInit(id, { ...storeInstance._raw })
-    for (const p of localPlugins) p.onInit?.(id, storeInstance._raw)
+    const initSnapshot = { ...storeInstance._raw } as Record<string, unknown>
+    for (const key of storeInstance._accessorKeys) {
+      initSnapshot[key] = storeInstance._accessorFns[key].get()
+    }
+    activeCore.runOnInit(id, initSnapshot)
+    for (const p of localPlugins) p.onInit?.(id, initSnapshot as StateOf<T>)
   }
 
   // ── Snapshot caching ──────────────────────────────────────────────────────
@@ -479,8 +487,10 @@ export function createStore<T extends Record<string, unknown>>(
   const mergedStore = buildMergedStore<T>(store)
 
   // $patch — batch update with a single subscriber notification.
-  // Writes each changed key directly to _raw (bypassing per-key proxy notify),
-  // runs plugin onStateChange for each changed key, then fires one notify('*').
+  // State keys: written directly to _raw (bypassing per-key proxy notify) so
+  // the final notify('*') is the only subscriber callsite.
+  // Accessor keys: must go through their setter (the setter owns transform +
+  // notify), so they each fire individually before the trailing notify('*').
   ;(mergedStore as Record<string, unknown>)['$patch'] = (partial: Partial<StateOf<T>>) => {
     const raw = store._raw as Record<string, unknown>
     const changes: Array<{ key: string; old: unknown; new: unknown }> = []
@@ -492,6 +502,12 @@ export function createStore<T extends Record<string, unknown>>(
       if (oldVal === newVal) continue
       raw[key] = newVal
       changes.push({ key, old: oldVal, new: newVal })
+    }
+
+    for (const key of store._accessorKeys) {
+      if (!Object.prototype.hasOwnProperty.call(partial, key)) continue
+      const newVal = (partial as Record<string, unknown>)[key]
+      store._accessorFns[key].set(newVal)
     }
 
     if (changes.length === 0) return
