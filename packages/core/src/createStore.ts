@@ -429,20 +429,21 @@ export function createStore<T extends Record<string, unknown>>(
         const inst = instance as Record<string, unknown>
         const origGet = descriptor.get
         const origSet = descriptor.set
+        const wrappedSet = (v: unknown) => {
+          const oldValue = origGet.call(inst)
+          origSet.call(inst, v)
+          const newValue = origGet.call(inst)
+          storeInstance._notify(key, oldValue, newValue)
+        }
         Object.defineProperty(inst, key, {
           get: origGet,
-          set: (v: unknown) => {
-            const oldValue = origGet.call(inst)
-            origSet.call(inst, v)
-            const newValue = origGet.call(inst)
-            storeInstance._notify(key, oldValue, newValue)
-          },
+          set: wrappedSet,
           enumerable: true,
           configurable: true,
         })
         storeInstance._accessorFns[key] = {
           get: () => origGet.call(inst),
-          set: (v: unknown) => { (inst as Record<string, unknown>)[key] = v },
+          set: wrappedSet,
         }
       }
     }

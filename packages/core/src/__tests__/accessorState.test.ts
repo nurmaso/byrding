@@ -91,6 +91,15 @@ describe('accessor state — closure style', () => {
     expect(cb).toHaveBeenCalledOnce()
   })
 
+  test('no double-notification — wrappedSet shared between property and _accessorFns', () => {
+    const handle = createStore('temp-closure-no-double', closureStore)
+    const cb = vi.fn()
+    handle.subscribe('c1', ['fahrenheit'], cb)
+    handle.store.fahrenheit = 212
+    handle.store.fahrenheit = 100
+    expect(cb).toHaveBeenCalledTimes(2)
+  })
+
   test('subscriber receives correct old and new values', () => {
     const handle = createStore('temp-closure-vals', closureStore)
     const cb = vi.fn()
