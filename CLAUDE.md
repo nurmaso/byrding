@@ -112,16 +112,3 @@ Every change to a publishable package (`@byrding/core`, `@byrding/react`, `@byrd
 
 > **Never manually edit `package.json` version fields.** Always go through `pnpm changeset version` so changelogs stay in sync.
 
----
-
-## P0 out of scope — do not implement
-
-- Plugins API
-- Persistence / localStorage middleware
-- DevTools integration (Redux DevTools)
-- `$patch()` batch update API
-- Selector memoisation (`shallowEqual`)
-- Array mutation debouncing (`queueMicrotask`)
-- Deep Vue reactivity (`reactive()` instead of `shallowRef`)
-- Auto dependency tracking (key paths remain explicit)
-- Preact, Solid, or Svelte adapters
