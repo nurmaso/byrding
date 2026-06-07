@@ -64,6 +64,18 @@ importers:
         specifier: ^5.0.0
         version: 5.4.21(@types/node@12.20.55)
 
+  packages/plugin-persist:
+    devDependencies:
+      '@byrding/core':
+        specifier: workspace:*
+        version: link:../core
+      typescript:
+        specifier: ^5.0.2
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@12.20.55)(jsdom@25.0.1)
+
   packages/react:
     dependencies:
       '@byrding/core':
