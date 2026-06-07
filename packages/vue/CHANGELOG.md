@@ -1,5 +1,13 @@
 # @byrding/vue
 
+## 0.3.4
+
+### Patch Changes
+
+- Updated dependencies [00f424f]
+- Updated dependencies [de6074f]
+  - @byrding/core@0.10.1
+
 ## 0.3.3
 
 ### Patch Changes

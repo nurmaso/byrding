@@ -1,6 +1,6 @@
 {
   "name": "@byrding/core",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "Vanilla JS core — Proxy reactivity, subscription map, store registry",
   "type": "module",
   "main": "./dist/index.js",

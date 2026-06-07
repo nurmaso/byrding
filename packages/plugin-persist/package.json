@@ -1,6 +1,6 @@
 {
   "name": "@byrding/plugin-persist",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Persistence plugin for @byrding — syncs store state to localStorage/sessionStorage",
   "type": "module",
   "main": "./dist/index.js",
@@ -30,7 +30,7 @@
     "provenance": true
   },
   "peerDependencies": {
-    "@byrding/core": ">=0.10.0"
+    "@byrding/core": ">=0.10.1"
   },
   "devDependencies": {
     "@byrding/core": "workspace:*",

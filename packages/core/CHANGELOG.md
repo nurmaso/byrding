@@ -1,5 +1,12 @@
 # @byrding/core
 
+## 0.10.1
+
+### Patch Changes
+
+- 00f424f: Fix three accessor state bugs: $patch() now applies accessor keys via their setter; onInit plugin snapshot includes accessor values; accessor getters in buildMergedStore now participate in cross-store dep tracking.
+- de6074f: Refactor closure-style accessor notification path to be symmetric with class style: extract `wrappedSet` and share it between the `Object.defineProperty` setter and `_accessorFns[key].set`. No change in external behavior.
+
 ## 0.10.0
 
 ### Minor Changes
