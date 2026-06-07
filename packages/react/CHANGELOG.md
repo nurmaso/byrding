@@ -1,5 +1,13 @@
 # @byrding/react
 
+## 0.4.3
+
+### Patch Changes
+
+- Updated dependencies [00f424f]
+- Updated dependencies [de6074f]
+  - @byrding/core@0.10.1
+
 ## 0.4.2
 
 ### Patch Changes
