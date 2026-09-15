@@ -27,6 +27,18 @@
  * The first call for a given `id` instantiates and registers the store.
  * Subsequent calls return the existing singleton.  The second `definition`
  * argument is silently discarded — **first registration wins**.
+ *
+ * ## Instrumented exactly once
+ *
+ * `createStore` is called once per framework adapter (`@byrding/react` and
+ * `@byrding/vue` each call it from `defineStore`) and again on every Vite HMR
+ * re-evaluation.  Everything that wraps the instance — the `_notify` plugin /
+ * snapshot-cache wrapper, the `onAction` wrapper around each action, and the
+ * snapshot cache itself — therefore lives inside the registration branch and
+ * on `StoreInstance`, never in this function's per-call closure.  Otherwise
+ * each handle would stack another wrapper: plugin hooks would fire once per
+ * handle, action references would differ between handles, and a `$patch`
+ * through one handle would leave the others holding a stale snapshot.
  */
 
 import { classify } from './classify.js'
@@ -42,6 +54,7 @@ import {
 } from './subscriptions.js'
 import { storeRegistry } from './registry.js'
 import { coreStore, CoreStore } from './coreStore.js'
+import { devWarn } from './devWarn.js'
 import type { StoreInstance, StoreHandle, StateOf, ActionsOf, Plugin, UseStoreFn } from './types.js'
 
 // Module-level flag: true only while a store factory or constructor is executing.
@@ -283,6 +296,8 @@ export function createStore<T extends Record<string, unknown>>(
       _callbackMap: new Map(),
       _notify: (keyPath, _oldValue, _newValue) => notify(storeInstance, keyPath),
       _localPlugins: localPlugins,
+      _core: activeCore,
+      _snapshotCache: null,
     }
 
     if (usingClass) {
@@ -448,41 +463,63 @@ export function createStore<T extends Record<string, unknown>>(
       }
     }
 
+    // ── Notification wrapper ─────────────────────────────────────────────────
+    //
+    // Every mutation flows through `_notify`.  The wrapper, in order:
+    //   1. invalidates the shared snapshot cache — React's
+    //      `useSyncExternalStore` requires `getSnapshot()` to return the SAME
+    //      reference between mutations and a new one after each real change;
+    //   2. runs plugin `onStateChange` hooks — the registering core's global
+    //      plugins first, then this store's per-store plugins;
+    //   3. fires this store's own subscribers (the original `_notify`);
+    //   4. propagates to stores whose computed getters read this one.
+    //
+    // This runs inside the registration branch so it is applied exactly once
+    // per id, however many handles are created (see the header comment).
+    const originalNotify = storeInstance._notify
+    storeInstance._notify = (keyPath: string, oldValue?: unknown, newValue?: unknown) => {
+      storeInstance._snapshotCache = null
+      const path = normaliseKeyPath(keyPath)
+      storeInstance._core.runOnStateChange(id, path, newValue, oldValue)
+      for (const p of localPlugins) p.onStateChange?.(id, path, newValue, oldValue)
+      originalNotify(keyPath, oldValue, newValue)
+      notifyCrossStoreDeps(id, (targetId) => storeRegistry.get(targetId))
+    }
+
+    // ── Action wrapper ───────────────────────────────────────────────────────
+    //
+    // Runs plugin `onAction` hooks before the bound action.  Also once per id,
+    // so `handle.store.someAction` is reference-identical across handles.
+    for (const key of actionKeys) {
+      const original = (storeInstance._actionFns as Record<string, unknown>)[key] as (...args: unknown[]) => unknown
+      ;(storeInstance._actionFns as Record<string, unknown>)[key] = (...args: unknown[]) => {
+        storeInstance._core.runOnAction(id, key, args)
+        for (const p of localPlugins) p.onAction?.(id, key, args)
+        return original(...args)
+      }
+    }
+
     storeRegistry.set(id, storeInstance)
     const initSnapshot = { ...storeInstance._raw } as Record<string, unknown>
     for (const key of storeInstance._accessorKeys) {
       initSnapshot[key] = storeInstance._accessorFns[key].get()
     }
-    activeCore.runOnInit(id, initSnapshot)
+    storeInstance._core.runOnInit(id, initSnapshot)
     for (const p of localPlugins) p.onInit?.(id, initSnapshot as StateOf<T>)
   }
 
-  // ── Snapshot caching ──────────────────────────────────────────────────────
-  //
-  // React's `useSyncExternalStore` requires that `getSnapshot()` returns the
-  // SAME reference between mutations.  We cache the last snapshot and
-  // invalidate it on every notification so only a real change produces a new
-  // object reference.
   const store = storeRegistry.get(id)!
 
-  const originalNotify = store._notify
-  let _snapshotCache: Record<string, unknown> | null = null
-  store._notify = (keyPath: string, oldValue?: unknown, newValue?: unknown) => {
-    _snapshotCache = null
-    activeCore.runOnStateChange(id, normaliseKeyPath(keyPath), newValue, oldValue)
-    for (const p of store._localPlugins) p.onStateChange?.(id, normaliseKeyPath(keyPath), newValue, oldValue)
-    originalNotify(keyPath, oldValue, newValue)
-    notifyCrossStoreDeps(id, (targetId) => storeRegistry.get(targetId))
-  }
-
-  for (const key of store._actionKeys) {
-    const original = store._actionFns[key] as (...args: unknown[]) => unknown
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    store._actionFns[key] = ((...args: unknown[]) => {
-      activeCore.runOnAction(id, key, args)
-      for (const p of store._localPlugins) p.onAction?.(id, key, args)
-      return original(...args)
-    }) as any
+  // First registration wins for `options.core` too: the core that registered
+  // the id is the only one whose global plugins ever run for this store.  A
+  // later call resolving a different core (an explicit `options.core`, or the
+  // global default when the first call passed a custom one) is a silent
+  // configuration mistake, so surface it once in development.
+  if (activeCore !== store._core) {
+    devWarn(
+      `createStore('${id}'): a different \`options.core\` was passed than the one that registered this id. ` +
+      `First registration wins — plugins on the later core will not run for this store.`,
+    )
   }
 
   const mergedStore = buildMergedStore<T>(store)
@@ -513,10 +550,10 @@ export function createStore<T extends Record<string, unknown>>(
 
     if (changes.length === 0) return
 
-    _snapshotCache = null
+    store._snapshotCache = null
 
     for (const { key, old: oldVal, new: newVal } of changes) {
-      activeCore.runOnStateChange(id, key, newVal, oldVal)
+      store._core.runOnStateChange(id, key, newVal, oldVal)
       for (const p of store._localPlugins) p.onStateChange?.(id, key, newVal, oldVal)
     }
 
@@ -533,13 +570,14 @@ export function createStore<T extends Record<string, unknown>>(
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getSnapshot(): any {
-      if (!_snapshotCache) {
-        _snapshotCache = { ...store._raw }
+      if (!store._snapshotCache) {
+        const snapshot: Record<string, unknown> = { ...store._raw }
         for (const key of store._accessorKeys) {
-          (_snapshotCache as Record<string, unknown>)[key] = store._accessorFns[key].get()
+          snapshot[key] = store._accessorFns[key].get()
         }
+        store._snapshotCache = snapshot
       }
-      return _snapshotCache
+      return store._snapshotCache
     },
   }
 }
