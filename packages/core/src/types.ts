@@ -28,6 +28,19 @@ export type MergedStore<S, A, C = Record<never, never>> = S & A & C & {
 
 // ─── Internal store shape ────────────────────────────────────────────────────
 
+/**
+ * The subset of `CoreStore` a registered store needs at runtime.
+ *
+ * Declared structurally here rather than imported from `coreStore.ts`, which
+ * itself imports this file for `Plugin` — keeping `types.ts` dependency-free.
+ */
+export interface StoreCoreHooks {
+  runOnInit(storeId: string, snapshot: Record<string, unknown>): void
+  runOnStateChange(storeId: string, path: string, next: unknown, prev: unknown): void
+  runOnAction(storeId: string, actionName: string, args: unknown[]): void
+  runOnDispose(storeId: string): void
+}
+
 export interface StoreInstance<
   TState extends Record<string, unknown> = Record<string, unknown>,
   TActions extends Record<string, unknown> = Record<string, unknown>,
@@ -98,6 +111,25 @@ export interface StoreInstance<
    * Run after the active global CoreStore's hooks, global-first order.
    */
   _localPlugins: Plugin[]
+
+  /**
+   * The CoreStore whose global plugins run for this store — the one resolved
+   * by the `createStore` call that registered the id.  Later calls for the
+   * same id that resolve a different core are ignored (first registration
+   * wins) and warned about in development.
+   */
+  _core: StoreCoreHooks
+
+  /**
+   * Last `getSnapshot()` result, or `null` when invalidated.
+   *
+   * Lives on the instance — not in a per-`createStore`-call closure — so every
+   * handle for this id shares one cache.  React's `useSyncExternalStore` then
+   * sees a single stable reference between mutations and a single new
+   * reference after one, regardless of which handle (or which store, via
+   * cross-store propagation) caused the change.
+   */
+  _snapshotCache: Record<string, unknown> | null
 }
 
 // ─── Inter-store composition ─────────────────────────────────────────────────

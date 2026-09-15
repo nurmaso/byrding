@@ -119,7 +119,16 @@ function _propagate(
     }
     inStack.add(depId)
     const depStore = getStore(depId)
-    if (depStore) notify(depStore, '*')
+    if (depStore) {
+      // Deliberately bypasses the dependent's wrapped `_notify` — that would
+      // re-run plugin `onStateChange` hooks for a change that happened in a
+      // different store.  The wrapped `_notify` is also where the snapshot
+      // cache is normally invalidated, so do that here explicitly; otherwise a
+      // React component reading only computed values derived from this
+      // upstream never sees a new snapshot reference and never re-renders.
+      depStore._snapshotCache = null
+      notify(depStore, '*')
+    }
     _propagate(depId, getStore, inStack)
     inStack.delete(depId)
   }
