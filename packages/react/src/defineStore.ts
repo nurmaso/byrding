@@ -24,6 +24,10 @@
  * from the call stack (PascalCase function name or file name).  Render counts
  * and component lifecycle events are emitted to `window.__BYRDING_DEVTOOLS__`
  * with zero configuration required from the developer.
+ *
+ * In production the inference is skipped entirely — it constructs an `Error`
+ * and parses its stack on every component's first render — and the component
+ * is reported under its generated `byrding_N` id instead.
  */
 
 import { useRef } from 'react'
@@ -40,10 +44,16 @@ import {
 
 // ─── Component name inference ─────────────────────────────────────────────────
 
+// Declared locally (not via `@types/node`) so this module type-checks for
+// browser-only consumers.  See the `process.env.NODE_ENV` note in `useStore`.
+declare const process: { env: { NODE_ENV?: string } }
+
 /**
  * Parses the call stack captured at `useStore` call time to find the first
  * PascalCase function name or PascalCase file name — that's the React component.
- * Only runs in development; returns `undefined` in production.
+ *
+ * Only called in development — the call site in `useStore` is gated on
+ * `process.env.NODE_ENV`, so a production bundle drops this function entirely.
  */
 function inferComponentName(): string | undefined {
   try {
@@ -91,10 +101,24 @@ export function defineStore<T extends Record<string, unknown>>(
     }
     const componentId = componentIdRef.current
 
-    // Infer component name once on first render.
+    // Infer component name once on first render — development only.
     const componentNameRef = useRef<string | undefined>(undefined)
     if (!componentNameRef.current) {
-      componentNameRef.current = inferComponentName() ?? componentId
+      let inferred: string | undefined
+      // The `process.env.NODE_ENV` comparison sits literally in the branch
+      // condition on purpose.  Bundlers replace it statically, and esbuild only
+      // drops `inferComponentName` from a production bundle when the literal
+      // is right here: hoisting it into a module-level constant, or calling
+      // core's `isDev()`, leaves the stack-parsing code in the bundle
+      // (verified with esbuild 0.21 and `--define:process.env.NODE_ENV`).
+      try {
+        if (process.env.NODE_ENV !== 'production') inferred = inferComponentName()
+      } catch {
+        // `process` is not defined and no bundler replaced it (unbundled
+        // browser usage): skip inference rather than throw, matching core's
+        // `isDev()` which also treats an unreadable NODE_ENV as production.
+      }
+      componentNameRef.current = inferred ?? componentId
     }
     const componentName = componentNameRef.current
 

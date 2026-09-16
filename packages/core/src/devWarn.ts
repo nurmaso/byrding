@@ -2,27 +2,37 @@
  * devWarn.ts
  *
  * Development-only diagnostics.  Every warning is prefixed with `[byrding]`,
- * emitted at most once per distinct message, and compiled out of production
- * builds: `isDev()` reads `process.env.NODE_ENV` in a form bundlers can
- * statically replace, so a `NODE_ENV=production` build turns each call site
- * into dead code.
+ * emitted at most once per distinct message, and silent in production.
+ *
+ * `isDev()` reads `process.env.NODE_ENV` as a bare member expression, which is
+ * the form every mainstream bundler replaces statically (Vite does so in both
+ * its dev transform and app builds; webpack via DefinePlugin; esbuild via
+ * `define`).  It must NOT be guarded with `typeof process`: in a browser
+ * production build the bundler replaces `process.env.NODE_ENV` with
+ * `"production"` but leaves `typeof process` alone, and since `process` does
+ * not exist in the browser that guard would report *development*.  Instead
+ * the read is wrapped in try/catch: where nothing defined or replaced it
+ * (unbundled browser usage), the ReferenceError is caught and we treat the
+ * environment as production — dev tooling stays off rather than throwing.
  *
  * `process` is declared locally rather than via `@types/node` so this module
- * type-checks in browser-only consumers; the `typeof` guard keeps it from
- * throwing where `process` is not defined at runtime.
+ * type-checks in browser-only consumers.
  */
 
-declare const process: { env?: { NODE_ENV?: string } } | undefined
+declare const process: { env: { NODE_ENV?: string } }
 
 const _emitted = new Set<string>()
 
-/** True unless `process.env.NODE_ENV === 'production'`. */
+/**
+ * True when `process.env.NODE_ENV` is readable and not `'production'`.
+ * False in production builds and wherever `process` is undefined.
+ */
 export function isDev(): boolean {
-  return (
-    typeof process === 'undefined' ||
-    process.env == null ||
-    process.env.NODE_ENV !== 'production'
-  )
+  try {
+    return process.env.NODE_ENV !== 'production'
+  } catch {
+    return false
+  }
 }
 
 /**
