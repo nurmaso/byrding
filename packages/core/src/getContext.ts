@@ -1,4 +1,5 @@
 import { storeRegistry } from './registry.js'
+import { VERSION } from './version.js'
 
 export interface ByrdingStoreContext {
   state: Record<string, unknown>
@@ -44,7 +45,8 @@ export function getContext(): ByrdingContext {
   }
 
   return {
-    version: '0.6.0',
+    // Baked in at build time from package.json — see scripts/generate-version.mjs.
+    version: VERSION,
     timestamp: new Date().toISOString(),
     stores,
   }

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { createStore } from '../createStore.js'
 import { getContext } from '../getContext.js'
 import { resetRegistry } from '../registry.js'
@@ -11,6 +12,15 @@ test('getContext returns top-level shape', () => {
   expect(typeof ctx.version).toBe('string')
   expect(typeof ctx.timestamp).toBe('string')
   expect(typeof ctx.stores).toBe('object')
+})
+
+test('getContext version equals the package.json version, read at test time', () => {
+  // Guards against the generated src/version.ts drifting from package.json
+  // (e.g. a version bump committed without running `pnpm build`).
+  const pkg = JSON.parse(
+    readFileSync(new URL('../../package.json', import.meta.url), 'utf8'),
+  ) as { version: string }
+  expect(getContext().version).toBe(pkg.version)
 })
 
 test('getContext includes registered store with correct state', () => {

@@ -104,11 +104,11 @@ Every change to a publishable package (`@byrding/core`, `@byrding/react`, `@byrd
    ```
    Use `patch` for bug fixes, `minor` for backwards-compatible new features, `major` for breaking changes.
 
-2. **Bump versions** — run `pnpm changeset version`. This reads all `.changeset/*.md` files, updates the affected `package.json` versions, writes `CHANGELOG.md` entries, and deletes the consumed changeset files. Packages that depend on a bumped package are also patched automatically (`updateInternalDependencies: "patch"` in `.changeset/config.json`).
+2. **Bump versions** — run `pnpm version-packages`. This runs `changeset version` (reads all `.changeset/*.md` files, updates the affected `package.json` versions, writes `CHANGELOG.md` entries, and deletes the consumed changeset files; packages that depend on a bumped package are also patched automatically via `updateInternalDependencies: "patch"` in `.changeset/config.json`) and then regenerates `packages/core/src/version.ts` from the bumped `package.json`. That file is tracked and must be committed with the bump — `getContext().version` reads from it, and a test fails if it drifts from `package.json`.
 
-3. **Verify the build** — run `pnpm build` and confirm it passes with no TypeScript errors before opening the PR.
+3. **Verify the build** — run `pnpm build` and confirm it passes with no TypeScript errors before opening the PR. (`pnpm build` also regenerates `version.ts` via core's `prebuild` hook.)
 
-4. **Commit and open a PR** — commit the version bumps and changelogs in a single commit (`chore: version packages`), push, and open a PR against `main`.
+4. **Commit and open a PR** — commit the version bumps, changelogs, and `version.ts` in a single commit (`chore: version packages`), push, and open a PR against `main`.
 
-> **Never manually edit `package.json` version fields.** Always go through `pnpm changeset version` so changelogs stay in sync.
+> **Never manually edit `package.json` version fields or `packages/core/src/version.ts`.** Always go through `pnpm version-packages` so changelogs and the baked-in version stay in sync.
 
