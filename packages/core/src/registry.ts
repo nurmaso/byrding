@@ -13,6 +13,7 @@
 import type { StoreInstance } from './types.js';
 import { removeStoreDeps } from './subscriptions.js'
 import { isDev } from './devWarn.js'
+import { checkSingleInstance } from './instanceGuard.js'
 
 type ViteHot = { readonly data: Record<string, unknown>; accept(cb?: (mod: unknown) => void): void }
 
@@ -27,6 +28,10 @@ export function _buildRegistry(hotData?: Record<string, unknown>): Map<string, S
 
 const _hot = (import.meta as { hot?: ViteHot }).hot
 export const storeRegistry: Map<string, StoreInstance> = _buildRegistry(_hot?.data)
+
+// The registry above is only a singleton if this module is.  Runs here, next
+// to the registry, so it is never tree-shaken away as an unused side effect.
+checkSingleInstance(_hot?.data)
 
 // ─── Disposal ─────────────────────────────────────────────────────────────────
 //
