@@ -3,3 +3,4 @@ packages:
   - 'playground'
   - 'render-demo'
   - 'docs'
+  - 'smoke'
