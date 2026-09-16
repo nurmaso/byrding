@@ -7,7 +7,10 @@
  * (e.g. version already on npm from a prior run).
  *
  * Before each publish it syncs the version in jsr.json from package.json,
- * since changesets bumps package.json but not jsr.json.
+ * since changesets bumps package.json but not jsr.json.  For the adapters it
+ * also syncs the `@byrding/core` import to a caret range on the core version
+ * being released, mirroring the `workspace:^` range npm gets — a stale or
+ * exact pin there makes JSR consumers install a second copy of core.
  */
 import { execSync } from 'child_process'
 import { readFileSync, writeFileSync } from 'fs'
@@ -16,6 +19,10 @@ import { join, dirname } from 'path'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const packages = ['core', 'react', 'vue']
+
+const coreVersion = JSON.parse(
+  readFileSync(join(root, 'packages', 'core', 'package.json'), 'utf8'),
+).version
 
 async function existsOnJsr(scope, pkg, version) {
   try {
@@ -42,6 +49,9 @@ for (const pkg of packages) {
 
   const jsrJson = JSON.parse(readFileSync(jsrJsonPath, 'utf8'))
   jsrJson.version = version
+  if (jsrJson.imports?.['@byrding/core']) {
+    jsrJson.imports['@byrding/core'] = `jsr:@byrding/core@^${coreVersion}`
+  }
   writeFileSync(jsrJsonPath, JSON.stringify(jsrJson, null, 2) + '\n')
   console.log(`Synced ${name} jsr.json → ${version}`)
 
