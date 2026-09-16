@@ -84,7 +84,10 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          version: pnpm changeset version
+          # `version-packages` = `changeset version` + regenerating
+          # packages/core/src/version.ts, so the bumped file lands in the
+          # "Version Packages" commit instead of going stale on main.
+          version: pnpm version-packages
           publish: pnpm changeset publish
           commit: 'chore: version packages'
           title: 'chore: version packages'
