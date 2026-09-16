@@ -3,24 +3,51 @@
   "version": "0.4.2",
   "description": "React adapter for @byrding/core — defineStore returns a hook via useSyncExternalStore",
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./testing": {
-      "types": "./dist/testing.d.ts",
-      "import": "./dist/testing.js"
+      "import": {
+        "types": "./dist/testing.d.ts",
+        "default": "./dist/testing.js"
+      },
+      "require": {
+        "types": "./dist/testing.d.cts",
+        "default": "./dist/testing.cjs"
+      }
     }
   },
+  "sideEffects": false,
   "files": [
     "dist",
-    "src"
+    "src",
+    "!src/**/__tests__"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "state-management",
+    "react",
+    "vue",
+    "store",
+    "reactive",
+    "typescript",
+    "cross-framework"
   ],
   "scripts": {
-    "build": "tsc --project tsconfig.json",
+    "build": "tsup",
     "test": "vitest run",
     "prepublishOnly": "pnpm run build"
   },
@@ -37,7 +64,13 @@
     "@byrding/core": "workspace:^"
   },
   "peerDependencies": {
+    "@testing-library/react": ">=14.0.0",
     "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@testing-library/react": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@testing-library/react": "^16.0.0",
