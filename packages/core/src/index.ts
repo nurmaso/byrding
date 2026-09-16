@@ -23,8 +23,8 @@ export {
   notifyCrossStoreDeps,
 } from './subscriptions.js'
 
-// Store registry
-export { storeRegistry, resetRegistry } from './registry.js'
+// Store registry — `disposeStore` is a development/test facility; no-op in production
+export { storeRegistry, resetRegistry, disposeStore } from './registry.js'
 
 // Plugin system — global CoreStore singleton and configuration
 export { CoreStore, coreStore, configureByrding } from './coreStore.js'
