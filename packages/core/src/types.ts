@@ -130,6 +130,17 @@ export interface StoreInstance<
    * cross-store propagation) caused the change.
    */
   _snapshotCache: Record<string, unknown> | null
+
+  /**
+   * The class constructor or factory function that registered this id.
+   *
+   * Kept only for identity comparison: a later `createStore` call for the
+   * same id with the SAME reference is the normal React + Vue / HMR path and
+   * stays silent, while a DIFFERENT reference (a test that forgot
+   * `resetRegistry()`, an edited definition under HMR) is warned about in
+   * development.  First registration wins either way.
+   */
+  _definition: Function
 }
 
 // ─── Inter-store composition ─────────────────────────────────────────────────

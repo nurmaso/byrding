@@ -298,6 +298,7 @@ export function createStore<T extends Record<string, unknown>>(
       _localPlugins: localPlugins,
       _core: activeCore,
       _snapshotCache: null,
+      _definition: definition,
     }
 
     if (usingClass) {
@@ -510,11 +511,27 @@ export function createStore<T extends Record<string, unknown>>(
 
   const store = storeRegistry.get(id)!
 
-  // First registration wins for `options.core` too: the core that registered
-  // the id is the only one whose global plugins ever run for this store.  A
-  // later call resolving a different core (an explicit `options.core`, or the
-  // global default when the first call passed a custom one) is a silent
-  // configuration mistake, so surface it once in development.
+  // First registration wins, and the discarded `definition` is only worth a
+  // warning when it is a DIFFERENT function reference.  The same reference
+  // arriving again is the normal path — React and Vue adapters both calling
+  // `defineStore` with one exported definition, or a Vite HMR re-evaluation
+  // of an unchanged module — and warning there would be noise that trains
+  // developers to ignore the warning that matters: a test that forgot
+  // `resetRegistry()`, or an edited definition under HMR that will never take
+  // effect.  `devWarn` dedupes, so a given id warns at most once per session.
+  if (definition !== store._definition) {
+    devWarn(
+      `createStore('${id}'): a different definition was passed than the one that registered this id. ` +
+      `First registration wins — the later definition is ignored. ` +
+      `Use a distinct id, or call resetRegistry() between tests, if a new definition is intended.`,
+    )
+  }
+
+  // Likewise for `options.core`: the core that registered the id is the only
+  // one whose global plugins ever run for this store.  A later call resolving
+  // a different core (an explicit `options.core`, or the global default when
+  // the first call passed a custom one) is a silent configuration mistake, so
+  // surface it once in development.
   if (activeCore !== store._core) {
     devWarn(
       `createStore('${id}'): a different \`options.core\` was passed than the one that registered this id. ` +
