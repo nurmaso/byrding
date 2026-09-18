@@ -1,8 +1,9 @@
 /**
  * Type-level tests for the Vue defineStore overloads.
  *
- * These are compile-time assertions only — no test runner required.
- * `tsc --noEmit` (or the package build) will fail if any assertion breaks.
+ * Compile-time assertions only.  Run by vitest's typecheck (see
+ * vitest.config.ts → tsconfig.test.json); the package build excludes
+ * __tests__, so `tsc --noEmit -p tsconfig.json` does NOT cover this file.
  *
  * Acceptance criteria (issue #46):
  * - Class overload returns () => MergedStore<StateOf<InstanceType<C>>, ActionsOf<InstanceType<C>>>
@@ -59,3 +60,51 @@ export type _ClassIsMergedStore = Assert<
     ? true
     : false
 >
+
+// ─── keyPaths typing ──────────────────────────────────────────────────────────
+//
+// `useStore(keyPaths)` is typed against the store's state and computed keys:
+// `'*'`, a key, or `key.<anything>` for nested / array paths.  A typo used to
+// silently subscribe to nothing; now it is a compile error.
+
+export const useTypedStore = defineStore('td-vue-paths', () => {
+  const store = {
+    count: 0,
+    user: { address: { city: 'Oslo' } },
+    items: [] as string[],
+    get double() { return store.count * 2 },
+    increment() { store.count++ },
+  }
+  return store
+})
+
+export const _pathsWildcard = () => useTypedStore(['*'])
+export const _pathsStateKeys = () => useTypedStore(['count', 'user'])
+export const _pathsComputedKey = () => useTypedStore(['double'])
+export const _pathsNested = () => useTypedStore(['user.address.city'])
+export const _pathsArrayIndex = () => useTypedStore(['items.0', 'items.length'])
+export const _pathsDefault = () => useTypedStore()
+
+// @ts-expect-error — a typo is not a key path
+export const _pathsTypo = () => useTypedStore(['cuont'])
+// @ts-expect-error — actions are not subscribable
+export const _pathsAction = () => useTypedStore(['increment'])
+// @ts-expect-error — a nested path must start with a real key
+export const _pathsBadRoot = () => useTypedStore(['users.address.city'])
+// @ts-expect-error — an untyped string[] no longer type-checks (breaking change)
+export const _pathsUntyped = (paths: string[]) => useTypedStore(paths)
+
+class TypedClassStore {
+  count = 0
+  user = { name: 'x' }
+  get double() { return this.count * 2 }
+  increment() { this.count++ }
+}
+
+export const useTypedClassStore = defineStore('td-vue-paths-class', TypedClassStore)
+
+export const _classPathsOk = () => useTypedClassStore(['*', 'count', 'double', 'user.name'])
+// @ts-expect-error — class actions are not subscribable either
+export const _classPathsAction = () => useTypedClassStore(['increment'])
+// @ts-expect-error — typo
+export const _classPathsTypo = () => useTypedClassStore(['cont'])

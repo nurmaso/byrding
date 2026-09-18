@@ -73,7 +73,7 @@ With subscriptions, each leaf connects to the store independently. Intermediate 
 
 ## Tradeoffs
 
-- **Key paths are strings.** They aren't checked against your type. Typos won't fail at compile time; they'll just silently subscribe to a path that never changes. TypeScript-safe key paths are a future item.
+- **Key paths are checked against your store's type.** `keyPaths` is typed as `KeyPath<T>[]`: `'*'`, a state or computed key, or a dotted path under one. A typo like `['cuont']` or an action name like `['increment']` is a compile error rather than a subscription that never fires. Only the root segment is checked — `'user.address.city'` and `'items.0'` are accepted as long as `user` / `items` exist. If you build the array in a variable, type it as `KeyPath<YourState>[]` (exported from `@byrding/core`) or use `as const`; a plain `string[]` no longer type-checks.
 - **Very fine-grained subscriptions can fragment updates.** If a single logical change mutates five keys, a wildcard subscriber re-renders once; five targeted subscribers re-render once each. Batching is on the roadmap; for now, if you're doing many writes in a loop, consider building up a value and writing once.
 
 Next: [Cross-framework sharing](./cross-framework) — how the same store can power a React and a Vue app simultaneously.

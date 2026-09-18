@@ -26,6 +26,26 @@ export type MergedStore<S, A, C = Record<never, never>> = S & A & C & {
   $patch(partial: Partial<S>): void
 }
 
+/** Keys of T a component can subscribe to: state and computed (everything that is not a function). */
+type DataKeys<T> = keyof StateOf<T> & string
+
+/**
+ * A key path accepted by `useStore(keyPaths)` and `StoreHandle.subscribe`.
+ *
+ * One of:
+ *   - `'*'` — every change;
+ *   - a state or computed key of the store (`'count'`, `'double'`);
+ *   - a dotted path under one (`'user.address.city'`, `'items.0'`,
+ *     `'items.length'`).  Only the root segment is checked against the
+ *     store; `normaliseKeyPath` collapses array index / length writes to
+ *     the parent path at runtime, so any tail is accepted.
+ *
+ * Typed against the store so a typo is a compile error rather than a
+ * subscription that silently never fires.  A plain `string[]` variable no
+ * longer type-checks — narrow it (`as const`) or type it as `KeyPath<T>[]`.
+ */
+export type KeyPath<T> = '*' | DataKeys<T> | `${DataKeys<T>}.${string}`
+
 // ─── Internal store shape ────────────────────────────────────────────────────
 
 /**
@@ -185,13 +205,13 @@ export interface StoreHandle<T> {
   store: T & { $reset(): void; $patch(partial: Partial<StateOf<T>>): void }
 
   /**
-   * Register a component subscriber for the given key paths.
+   * Register a component subscriber for the given key paths — see `KeyPath`.
    * Pass `['*']` to subscribe to any change.
    * Returns an unsubscribe function.
    */
   subscribe: (
     componentId: string,
-    keyPaths: string[],
+    keyPaths: KeyPath<T>[],
     callback: () => void
   ) => () => void
 

@@ -1,5 +1,5 @@
 // Types (consumed by framework adapters)
-export type { StoreInstance, StoreCoreHooks, StoreHandle, StateOf, ActionsOf, MergedStore, Plugin, PluginFactory, UseStoreFn } from './types.js'
+export type { StoreInstance, StoreCoreHooks, StoreHandle, StateOf, ActionsOf, MergedStore, KeyPath, Plugin, PluginFactory, UseStoreFn } from './types.js'
 
 // Development-only diagnostics — no-ops in production builds
 export { devWarn, isDev, resetDevWarnings } from './devWarn.js'
