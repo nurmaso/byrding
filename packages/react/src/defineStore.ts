@@ -40,6 +40,7 @@ import {
   type MergedStore,
   type StateOf,
   type ActionsOf,
+  type KeyPath,
 } from '@byrding/core'
 
 // ─── Component name inference ─────────────────────────────────────────────────
@@ -81,20 +82,20 @@ export function defineStore<C extends new () => object>(
   id: string,
   definition: C,
   options?: { core?: CoreStore },
-): (keyPaths?: string[]) => MergedStore<StateOf<InstanceType<C>>, ActionsOf<InstanceType<C>>>
+): (keyPaths?: KeyPath<InstanceType<C>>[]) => MergedStore<StateOf<InstanceType<C>>, ActionsOf<InstanceType<C>>>
 export function defineStore<T extends Record<string, unknown>>(
   id: string,
   definition: () => T,
   options?: { core?: CoreStore },
-): (keyPaths?: string[]) => MergedStore<StateOf<T>, ActionsOf<T>>
+): (keyPaths?: KeyPath<T>[]) => MergedStore<StateOf<T>, ActionsOf<T>>
 export function defineStore<T extends Record<string, unknown>>(
   id: string,
   definition: (new () => T) | (() => T),
   options?: { core?: CoreStore },
-): (keyPaths?: string[]) => MergedStore<StateOf<T>, ActionsOf<T>> {
+): (keyPaths?: KeyPath<T>[]) => MergedStore<StateOf<T>, ActionsOf<T>> {
   const storeHandle = createStore<T>(id, definition, options)
 
-  return function useStore(keyPaths: string[] = ['*']): MergedStore<StateOf<T>, ActionsOf<T>> {
+  return function useStore(keyPaths: KeyPath<T>[] = ['*']): MergedStore<StateOf<T>, ActionsOf<T>> {
     const componentIdRef = useRef<string | null>(null)
     if (!componentIdRef.current) {
       componentIdRef.current = generateComponentId()
