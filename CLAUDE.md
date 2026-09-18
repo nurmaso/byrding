@@ -104,6 +104,8 @@ Every change to a publishable package (`@byrding/core`, `@byrding/react`, `@byrd
    ```
    Use `patch` for bug fixes, `minor` for backwards-compatible new features, `major` for breaking changes.
 
+   CI (`.github/workflows/ci.yml`) fails a PR that changes anything under `packages/` without a changeset covering each changed publishable package. For a change that needs no release (tests, comments, internal refactors), add an empty one with `pnpm changeset --empty`.
+
 2. **Bump versions** — run `pnpm version-packages`. This runs `changeset version` (reads all `.changeset/*.md` files, updates the affected `package.json` versions, writes `CHANGELOG.md` entries, and deletes the consumed changeset files; packages that depend on a bumped package are also patched automatically via `updateInternalDependencies: "patch"` in `.changeset/config.json`) and then regenerates `packages/core/src/version.ts` from the bumped `package.json`. That file is tracked and must be committed with the bump — `getContext().version` reads from it, and a test fails if it drifts from `package.json`.
 
 3. **Verify the build** — run `pnpm build` and confirm it passes with no TypeScript errors before opening the PR. (`pnpm build` also regenerates `version.ts` via core's `prebuild` hook.)

@@ -1,0 +1,97 @@
+name: CI
+
+# Runs on every push to main and every pull request.
+#
+#   test       — Node 18 / 20 / 22 matrix: install, build, unit + type tests,
+#                tsc --noEmit in every package, ESM + CJS smoke tests against
+#                the built artifacts.
+#   changeset  — PRs only: if anything under packages/ changed, a changeset
+#                must exist for every changed publishable package.  For a
+#                change that needs no release (tests, comments, internal
+#                refactors) add an empty one: `pnpm changeset --empty`.
+#
+# Publishing is handled separately by publish.yml.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [18, 20, 22]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Reads the pnpm version from package.json#packageManager.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Adapters resolve @byrding/core's types through dist, and the smoke
+      # tests consume the built artifacts, so build before anything else.
+      - name: Build packages
+        run: pnpm build
+
+      # vitest run in every package — includes the *.test-d.ts type
+      # assertions via vitest's typecheck.
+      - name: Unit and type tests
+        run: pnpm test
+
+      - name: Typecheck (tsc --noEmit, every package)
+        run: pnpm typecheck
+
+      - name: ESM + CJS consumption smoke tests
+        run: pnpm smoke
+
+  changeset:
+    name: Changeset present
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history so the diff against the base branch is meaningful.
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Require a changeset when packages/ changed
+        env:
+          BASE: origin/${{ github.base_ref }}
+        run: |
+          if git diff --quiet "$BASE...HEAD" -- packages/; then
+            echo "No changes under packages/ — no changeset required."
+            exit 0
+          fi
+          # Exits non-zero when a publishable package changed since the base
+          # branch without a changeset covering it.
+          pnpm changeset status --since="$BASE"
