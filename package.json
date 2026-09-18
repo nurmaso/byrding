@@ -5,6 +5,7 @@
   "scripts": {
     "build": "pnpm -r --filter \"./packages/*\" build",
     "test": "pnpm -r --filter \"./packages/*\" test",
+    "typecheck": "pnpm -r --filter \"./packages/*\" exec tsc --noEmit -p tsconfig.json",
     "smoke": "pnpm --filter @byrding/smoke test",
     "version-packages": "changeset version && pnpm --filter @byrding/core generate-version",
     "dev:render-demo": "pnpm --filter @byrding/render-demo dev",
