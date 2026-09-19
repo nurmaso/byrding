@@ -9,11 +9,12 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: 'Guide', link: '/guide/getting-started' },
-      { text: 'API', link: '/api/core' },
+      { text: 'API', link: '/api/react' },
+      { text: 'Internals', link: '/internals/architecture' },
       { text: 'Examples', link: '/examples/render-demo' },
       {
         text: 'GitHub',
-        link: 'https://github.com/nurmaso/bocal',
+        link: 'https://github.com/nurmaso/byrding',
       },
     ],
 
@@ -29,8 +30,16 @@ export default defineConfig({
               link: '/guide/selective-subscriptions',
             },
             { text: 'Cross-framework sharing', link: '/guide/cross-framework' },
-            { text: 'Agent guidance', link: '/guide/agent-guidance' },
+            { text: 'Composing stores', link: '/guide/composing-stores' },
+            { text: 'Plugins', link: '/guide/plugins' },
+            { text: 'Devtools', link: '/guide/devtools' },
+          ],
+        },
+        {
+          text: 'For AI agents',
+          items: [
             { text: 'Consumer agent guidance', link: '/guide/consumer-agent-guidance' },
+            { text: 'Refactor agent guidance', link: '/guide/agent-guidance' },
           ],
         },
       ],
@@ -39,9 +48,19 @@ export default defineConfig({
         {
           text: 'API reference',
           items: [
-            { text: '@byrding/core', link: '/api/core' },
             { text: '@byrding/react', link: '/api/react' },
             { text: '@byrding/vue', link: '/api/vue' },
+            { text: '@byrding/core', link: '/api/core' },
+          ],
+        },
+      ],
+
+      '/internals/': [
+        {
+          text: 'Internals',
+          items: [
+            { text: 'Architecture', link: '/internals/architecture' },
+            { text: 'StoreInstance and subscriptions', link: '/internals/store-instance' },
           ],
         },
       ],
@@ -58,7 +77,7 @@ export default defineConfig({
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/nurmaso/bocal' },
+      { icon: 'github', link: 'https://github.com/nurmaso/byrding' },
     ],
 
     footer: {

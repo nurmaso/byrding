@@ -1,13 +1,13 @@
 # Playground
 
-Location: [`playground/`](https://github.com/nurmaso/bocal/tree/main/playground)
+Location: [`playground/`](https://github.com/nurmaso/byrding/tree/main/playground)
 
 A runnable cross-framework demo: a React tree and a Vue tree are mounted on the same page and share a single `CartStore` at runtime. Mutating state from one framework immediately updates the other.
 
 ## Run it
 
 ```bash
-git clone https://github.com/nurmaso/bocal.git
+git clone https://github.com/nurmaso/byrding.git
 cd byrding
 pnpm install
 cd playground
@@ -71,7 +71,7 @@ import { cartId, cartDefinition } from '../shared/cart.store.js'
 export const useCartStore = defineStore(cartId, cartDefinition)
 ```
 
-Both calls route through `@byrding/core`'s `storeRegistry`. React registers first; Vue's `cartDefinition` is silently discarded and Vue connects to the existing `CartStore` singleton. **First registration wins.**
+Both calls route through `@byrding/core`'s `storeRegistry`. React registers first; Vue's `cartDefinition` is discarded and Vue connects to the existing `CartStore` singleton. **First registration wins.** Because the two definitions are different function references, core logs a one-time development warning here — the playground does this deliberately to demonstrate the rule; in your own app, share one exported definition.
 
 ## Booting both frameworks in one entry
 

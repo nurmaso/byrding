@@ -83,9 +83,12 @@ See [`playground/`](/examples/playground) for a runnable React + Vue app sharing
 
 ## Rules and gotchas
 
-- **First registration wins.** If the first adapter to call `defineStore('cart', ClassA)` has registered the store, a later call `defineStore('cart', ClassB)` silently returns the existing `ClassA`-backed singleton. Keep one shared definition file as the source of truth.
+- **First registration wins.** If the first adapter to call `defineStore('cart', ClassA)` has registered the store, a later call `defineStore('cart', ClassB)` returns the existing `ClassA`-backed singleton — with a one-time development warning, since a *different* definition for a registered id is almost always a mistake. Passing the same exported definition from both adapters is silent. Keep one shared definition file as the source of truth.
+- **One copy of `@byrding/core`.** Sharing works because both adapters import the same core module. If your package manager installs two copies (mismatched adapter versions, a duplicated dependency), you get two registries and no sharing; core warns in development when it detects this. The adapters depend on core with a caret range so normal upgrades stay deduplicated.
 - **Action identity is stable.** Across re-renders and across adapters, `store.addItem === store.addItem` holds. You can safely pass actions as props or event handlers.
+- **Plugins fire once.** A store defined from both React and Vue still runs each plugin hook exactly once per change.
 - **Do not mutate shared state during render.** Same rule as any other store. Mutate inside event handlers, effects, or actions.
 - **Computed values are not cached.** If React and Vue both read `store.total`, the getter runs once per read per framework. For expensive computeds, cache inside the getter yourself.
+- **Vue writes go through actions.** The Vue composable returns a synced copy; `store.count = 5` on it does not reach the shared store. See [Defining stores → Consuming](./defining-stores#consuming).
 
 Next: browse the [API reference](/api/core).

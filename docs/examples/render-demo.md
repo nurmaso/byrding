@@ -1,6 +1,6 @@
 # Render-demo
 
-Location: [`render-demo/`](https://github.com/nurmaso/bocal/tree/main/render-demo)
+Location: [`render-demo/`](https://github.com/nurmaso/byrding/tree/main/render-demo)
 
 An interactive React app that makes re-render behaviour visible. Each `ComponentBox` shows a badge that flashes amber on every render and then fades grey, so you can literally see which components woke up after a mutation.
 

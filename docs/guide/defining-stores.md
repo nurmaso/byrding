@@ -65,13 +65,16 @@ Under the hood: the factory is called once. The core redefines each state proper
 | You need a reusable store family (create many instances) | Closure factory returned from a function |
 | You're sharing across React and Vue and want identical source | Either — they're both supported in both adapters |
 
-## What counts as state, computed, and action?
+## What counts as state, computed, accessor, and action?
 
-At registration time the core classifies each property on the instance:
+At registration time the core classifies each property on the instance by its property descriptor (it never reads the value, so getters are not evaluated):
 
-- **State** — any plain data property (writable, non-getter).
-- **Computed** — any getter (`get foo()`).
+- **State** — any plain data property.
+- **Computed** — a getter without a setter (`get foo()`).
+- **Accessor** — a getter *with* a setter (`get foo()` + `set foo(v)`). Reads go through the getter, writes through the setter and then notify subscribers of `foo`. Handy for derived-but-writable values such as a temperature in two units.
 - **Action** — any function-valued property (including prototype methods for classes).
+
+A `plugins` key (factory) or `static plugins` (class) is extracted before classification — see [Plugins](./plugins).
 
 Computed values are re-evaluated on every read. They are not cached — byrding relies on the subscription system to limit re-renders instead.
 
@@ -82,8 +85,11 @@ const store = useCounterStore()
 store.count           // read state
 store.double          // read computed (getter called)
 store.increment()     // action
-store.count = 5       // direct write — equivalent to store.count++ inside an action
+store.$patch({ count: 5, tax: 0.2 })   // several keys, one notification
+store.$reset()        // every state key back to its initial value
 ```
+
+**Direct writes differ by adapter.** In React the hook returns the live store, so `store.count = 5` writes through and notifies. In Vue the composable returns a synced *copy*: `store.count = 5` changes only that copy, and the next sync overwrites it — mutate through actions or `$patch` instead.
 
 Destructuring state properties loses reactivity (same as with `ref`s or `reactive` in Vue):
 
@@ -94,5 +100,12 @@ const { count, increment } = useCounterStore()
 // ✓ store is live
 const store = useCounterStore()
 ```
+
+## Writes that do not notify
+
+Two cases silently bypass reactivity in both adapters:
+
+- **In-place array mutation.** `items.push(x)`, `splice`, `sort`, `items[0] = x` — arrays are never proxied. Replace the array: `this.items = [...this.items, x]`.
+- **Nested writes in a closure-factory store.** Only the object's top-level keys are instrumented, so `store.user.name = x` (even inside an action) notifies nothing. Replace the object: `store.user = { ...store.user, name: x }`. Class stores proxy nested plain objects, so `this.user.name = x` *does* notify `user.name` there.
 
 Next: [Selective subscriptions](./selective-subscriptions) — the key feature that keeps re-renders minimal.

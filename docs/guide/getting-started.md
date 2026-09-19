@@ -1,17 +1,16 @@
 # Getting started
 
-`byrding` is a monorepo with three published packages and two demo apps:
+`byrding` is a monorepo. The published packages:
 
-```
-byrding/
-├── packages/
-│   ├── core/                  @byrding/core — framework-agnostic reactivity
-│   ├── react/                 @byrding/react — useStore hook via useSyncExternalStore
-│   └── vue/                   @byrding/vue — composable via shallowReactive
-├── playground/                cross-framework code sample (React + Vue share one CartStore)
-├── render-demo/               re-render visualiser (React)
-└── docs/                      this documentation (VitePress)
-```
+| Package | What it is |
+| --- | --- |
+| `@byrding/react` | `defineStore` → React hook (`useSyncExternalStore`) |
+| `@byrding/vue` | `defineStore` → Vue 3 composable (`shallowReactive`) |
+| `@byrding/core` | the framework-agnostic engine both adapters depend on; use it directly from vanilla JS |
+| `@byrding/plugin-persist` | localStorage / sessionStorage persistence plugin |
+| `@byrding/vite` | dev-server plugin that writes `getContext()` to `.byrding-context.json` |
+
+Plus a Chrome devtools extension (`packages/devtools-extension`), a cross-framework `playground/`, a `render-demo/` visualiser, and this site. All packages ship ESM and CommonJS with types and need Node ≥ 18.
 
 ## Install from npm
 
@@ -46,9 +45,13 @@ npx jsr add @byrding/core
 The repo uses [pnpm workspaces](https://pnpm.io/workspaces). Clone it and install from the root:
 
 ```bash
-git clone https://github.com/nurmaso/bocal.git
+git clone https://github.com/nurmaso/byrding.git
 cd byrding
 pnpm install
+pnpm build        # tsup — ESM + CJS + types for every package
+pnpm test         # vitest in every package, including the type tests
+pnpm typecheck    # tsc --noEmit in every package
+pnpm smoke        # import (ESM) and require (CJS) the built artifacts
 ```
 
 ## Run the demos
@@ -57,7 +60,7 @@ pnpm install
 pnpm dev:render-demo   # re-render visualiser on http://localhost:5174
 ```
 
-The [`playground/`](https://github.com/nurmaso/bocal/tree/main/playground) directory is a source-only reference showing how the same `CartStore` is wired into a React app and a Vue app.
+The [`playground/`](https://github.com/nurmaso/byrding/tree/main/playground) directory shows the same `CartStore` wired into a React tree and a Vue tree on one page.
 
 ## Run the docs locally
 
@@ -109,16 +112,6 @@ export function Counter() {
 
 ## Publishing a new version
 
-Create a version tag — the Actions workflow publishes to both npm and JSR automatically:
-
-```bash
-git tag v0.1.0
-git push --tags
-```
-
-> **Prerequisite** — set up once:
-> 1. Claim `@byrding` org on [npmjs.com](https://www.npmjs.com/org/create) and [jsr.io](https://jsr.io/new).
-> 2. Add `NPM_TOKEN` secret to GitHub repo → Settings → Secrets → Actions.
-> 3. Enable GitHub Actions publishing on jsr.io for each package (`@byrding/core`, `@byrding/react`, `@byrding/vue`).
+Releases are driven by [changesets](https://github.com/changesets/changesets). Every change to a published package needs a `.changeset/*.md` file (`pnpm changeset`, or `pnpm changeset --empty` for a change that needs no release — CI enforces this on PRs). On every push to `main` the release workflow opens or updates a **Version Packages** PR; merging that PR bumps versions, writes changelogs, and publishes to npm and JSR. Details in the repo's `CLAUDE.md`.
 
 Next: [Defining stores](./defining-stores) walks through the two definition styles and their tradeoffs.
