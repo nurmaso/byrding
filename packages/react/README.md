@@ -1,27 +1,6 @@
 # `@byrding/react`
 
-React adapter. Turns a store definition into a React hook.
-
-> **AI agents** — see the [consumer agent guidance](https://github.com/nurmaso/byrding/blob/main/.claude/docs/byrding-consumer-agent-guidance.md) for best practices, patterns, and gotchas.
-
-## Install
-
-```bash
-npm install @byrding/react
-# or
-npx jsr add @byrding/react
-```
-
-## `defineStore(id, definition)`
-
-```ts
-function defineStore<T extends Record<string, unknown>>(
-  id: string,
-  definition: (new () => T) | (() => T),
-): (keyPaths?: string[]) => T
-```
-
-Returns a hook. The hook can be called inside any React component.
+A store is a class or a plain object. `defineStore` turns it into a hook. Components subscribe to the key paths they read and re-render only when those change. The same store instance can back Vue components at the same time through [`@byrding/vue`](https://www.npmjs.com/package/@byrding/vue) — one live object, no bridge code.
 
 ```ts
 // stores/counter.ts
@@ -37,57 +16,107 @@ export const useCounterStore = defineStore('counter', () => {
 })
 ```
 
-## Using the hook
-
 ```tsx
-// full subscription — re-renders on any mutation
-const store = useCounterStore()
-
-// selective subscription — re-renders only when count changes
-const store = useCounterStore(['count'])
+function Counter() {
+  const store = useCounterStore(['count'])   // re-renders only when `count` changes
+  return <button onClick={store.increment}>{store.count} × 2 = {store.double}</button>
+}
 ```
 
-The return value is the live merged store object:
+## Install
+
+```bash
+npm install @byrding/react        # or: pnpm add / yarn add
+npx jsr add @byrding/react        # JSR (TypeScript source)
+```
+
+Requires `react >= 18` (uses `useSyncExternalStore`) and Node ≥ 18 for SSR/tests. Ships ESM and CommonJS with types for both. `@byrding/core` is installed as a dependency; you never import it.
+
+## How it compares
+
+| | `@byrding/react` | Zustand | Valtio | Jotai | Pinia |
+| --- | --- | --- | --- | --- | --- |
+| One live store shared by React **and** Vue components | ✅ built in | vanilla core; no Vue adapter | vanilla core; no Vue adapter | React only | Vue only |
+| Store shape | class or plain object | `create()` with `set`/`get` | proxy object | atoms | options or setup store |
+| Re-render granularity | key paths you declare | selectors | accessed-property tracking | per atom | Vue reactivity |
+| Computed values | getters, evaluated on read | derive in selectors | `derive` utility | derived atoms | cached getters |
+| Devtools | own extension + `getContext()` | Redux DevTools | Redux DevTools | own extension | Vue Devtools |
+| Size, min+gzip | core 4.1 kB + adapter 0.6 kB | | | | |
+
+**What cross-framework sharing buys.** A React island and a Vue island on one page — or a codebase mid-migration — read and write one object, and each side re-renders when the other mutates it. No event bus, no duplicated state, no adapter you wrote yourself.
+
+**What it costs.** Stores are singletons in a module-level registry keyed by a string id (first registration wins; duplicates warn in development), so your bundle must contain exactly one copy of `@byrding/core` (it warns if it finds two). Computed values are not cached. The adapters are thin, so there is no framework-native devtools panel, Suspense integration, or async helper — byrding has its own devtools extension instead.
+
+## API
+
+### `defineStore(id, definition, options?)`
 
 ```ts
-store.count         // number  — live read
-store.double        // number  — getter called per read
-store.increment()   // void    — action
-store.count = 10    // allowed — triggers notification
+function defineStore<T>(
+  id: string,
+  definition: (new () => T) | (() => T),
+  options?: { core?: CoreStore },
+): (keyPaths?: KeyPath<T>[]) => MergedStore<T>
 ```
 
-Action references are stable across re-renders. Passing `store.increment` as a prop or `onClick` handler is safe and does not cause spurious re-renders.
+Registers the store on first call and returns a hook. Call it once at module level and export the hook. `options.core` runs the store under an isolated plugin host instead of the global one — see [Plugins](https://github.com/nurmaso/byrding/blob/main/docs/guide/plugins.md).
 
-## How it works
-
-The hook is built on `useSyncExternalStore`:
+### The hook
 
 ```ts
-useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+const store = useCounterStore()                 // default: ['*'] — re-render on any change
+const store = useCounterStore(['count'])        // only when `count` changes
+const store = useCounterStore(['user.name'])    // nested paths; array index / length collapse to the array
 ```
 
-- `subscribe` is stabilised with `useRef` — a new function identity on every render would cause an infinite re-subscribe loop.
-- `getSnapshot` returns a cached plain object (shallow copy of `_raw`). The cache is invalidated on every mutation, so React sees a fresh reference and schedules a re-render.
-- After the render, the component reads **live** values from the returned merged store — so computed getters always return the current value, even if the snapshot only carries raw state.
+`keyPaths` is typed against the store: a typo or an action name is a compile error. Build the array in a variable? Type it `KeyPath<T>[]` (from `@byrding/core`) or use `as const`; a plain `string[]` does not type-check.
 
-## Component ID
-
-Each component instance is assigned a stable `componentId` (`byrding_NN`) on first render, stored in a `useRef`. This is what the core's subscription map uses to route notifications. You never see it.
-
-## Typing
-
-`defineStore<T>` infers `T` from the definition:
+The return value is the **live** merged store, not a snapshot:
 
 ```ts
-const useCounterStore = defineStore('counter', class {
-  count = 0
-  increment() { this.count++ }
-})
-// => (keyPaths?: string[]) => { count: number; increment: () => void }
+store.count          // state — live read
+store.double         // computed — the getter runs on every read
+store.increment()    // action — stable reference across renders and across adapters
+store.count = 10     // direct write — notifies subscribers
+store.$patch({ count: 1, label: 'x' })   // several keys, one notification
+store.$reset()       // back to initial state (one notification per changed key)
 ```
 
-TypeScript sees all fields on `T`. `keyPaths` is currently typed as `string[]` — narrow-typed key paths are a future enhancement.
+Destructuring copies the values at that moment: `const { count, increment } = useCounterStore()` — `increment` stays valid, `count` is stale after the next change.
 
-## Peer dependencies
+### Typing
 
-- `react >= 18` (needs `useSyncExternalStore`)
+State, computed and actions are inferred from the definition for both styles. `MergedStore<T>` is the flat object above plus `$patch` and `$reset`.
+
+```ts
+class CounterStore { count = 0; increment() { this.count++ } }
+const useCounterStore = defineStore('counter', CounterStore)
+// (keyPaths?: KeyPath<...>[]) => { count: number; increment(): void; $patch(...): void; $reset(): void }
+```
+
+### `@byrding/react/testing`
+
+```ts
+import { renderStore } from '@byrding/react/testing'
+const { result, act, rerender, unmount } = renderStore(useCounterStore)
+await act(() => result.current.increment())
+expect(result.current.count).toBe(1)
+```
+
+Wraps `renderHook` from `@testing-library/react` (an optional peer dependency — install it yourself).
+
+## Things to know
+
+- **Replace arrays; don't mutate them in place.** `items.push(x)` never notifies. Write `this.items = [...this.items, x]`.
+- **Nested writes depend on the definition style.** Class stores proxy nested plain objects, so `this.user.name = x` notifies `user.name`. Closure stores instrument only top-level keys, so `store.user.name = x` notifies nothing — replace the object: `store.user = { ...store.user, name: x }`.
+- **`defineStore` runs at module level, once.** Not inside a component.
+- **Cross-framework sharing** needs the id and the definition exported from one shared file; each adapter wraps them with its own `defineStore`.
+- **Devtools.** Register `devtoolsPlugin()` (see [Devtools](https://github.com/nurmaso/byrding/blob/main/docs/guide/devtools.md)); the hook reports each component's name and render count. In production the name inference is compiled out and the component id is reported instead.
+
+## Documentation
+
+[Guide](https://github.com/nurmaso/byrding/tree/main/docs/guide) · [API reference](https://github.com/nurmaso/byrding/blob/main/docs/api/react.md) · [Internals](https://github.com/nurmaso/byrding/tree/main/docs/internals) · [Changelog](https://github.com/nurmaso/byrding/blob/main/packages/react/CHANGELOG.md)
+
+Generating code with an AI agent? Point it at the [consumer agent guidance](https://github.com/nurmaso/byrding/blob/main/.claude/docs/byrding-consumer-agent-guidance.md).
+
+MIT

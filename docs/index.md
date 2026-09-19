@@ -11,7 +11,7 @@ hero:
       link: /guide/getting-started
     - theme: alt
       text: View on GitHub
-      link: https://github.com/nurmaso/bocal
+      link: https://github.com/nurmaso/byrding
 
 features:
   - title: One core, many frameworks
@@ -75,9 +75,13 @@ function Counter() {
 
 | Package | Description |
 | --- | --- |
-| [`@byrding/core`](/api/core) | Vanilla JS core — Proxy reactivity, subscription map, store registry. |
 | [`@byrding/react`](/api/react) | React adapter — `defineStore` returns a hook via `useSyncExternalStore`. |
 | [`@byrding/vue`](/api/vue) | Vue 3 adapter — `defineStore` returns a composable backed by `shallowReactive`. |
+| [`@byrding/core`](/api/core) | The engine both adapters depend on — registry, reactivity, subscriptions, plugins. Use directly from vanilla JS. |
+| `@byrding/plugin-persist` | localStorage / sessionStorage persistence — see [Plugins](/guide/plugins). |
+| `@byrding/vite` | Dev-server plugin that writes `getContext()` to `.byrding-context.json` — see [Devtools](/guide/devtools). |
+
+All packages ship ESM and CommonJS with types; Node ≥ 18. Core is 4.1 kB min+gzip, the adapters under 1 kB each.
 
 ## Demos
 
